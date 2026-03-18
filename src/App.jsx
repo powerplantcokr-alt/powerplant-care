@@ -18,11 +18,12 @@ async function claudeCall(messages, system) {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system, messages }),
+      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 1000, system, messages }),
     });
     const data = await res.json();
-    return data.content?.[0]?.text || "응답을 받지 못했어요.";
-  } catch { return "네트워크 오류가 발생했어요. 다시 시도해주세요."; }
+    if (data.error) return `오류: ${data.error.message || JSON.stringify(data.error)}`;
+    return data.content?.[0]?.text || `응답 형식 오류: ${JSON.stringify(data).slice(0, 100)}`;
+  } catch (e) { return `네트워크 오류: ${e.message}`; }
 }
 
 async function claudeVision(base64, mimeType, prompt, system) {
@@ -31,13 +32,14 @@ async function claudeVision(base64, mimeType, prompt, system) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514", max_tokens: 1000, system,
+        model: "claude-haiku-4-5-20251001", max_tokens: 1000, system,
         messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mimeType, data: base64 } }, { type: "text", text: prompt }] }],
       }),
     });
     const data = await res.json();
+    if (data.error) return `오류: ${data.error.message || JSON.stringify(data.error)}`;
     return data.content?.[0]?.text || "진단을 완료하지 못했어요.";
-  } catch { return "오류가 발생했어요. 다시 시도해주세요."; }
+  } catch (e) { return `오류: ${e.message}`; }
 }
 
 function HomeScreen({ setScreen, myPlants }) {
