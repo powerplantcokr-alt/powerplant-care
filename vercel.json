@@ -3,13 +3,3 @@
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
-```
-
-**"Commit changes"** 클릭!
-
----
-
-**바뀐 점**
-```
-❌ 전: /api/chat 포함 모든 경로 → index.html로 보냄
-✅ 후: /api/ 로 시작하는 경로는 제외하고 나머지만 → index.html
