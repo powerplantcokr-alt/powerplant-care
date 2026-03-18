@@ -15,7 +15,7 @@ const C = { bg: "#f5f2ea", surface: "#ffffff", green: "#1a3d28", greenMid: "#2d7
 
 async function claudeCall(messages, system) {
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system, messages }),
@@ -27,7 +27,7 @@ async function claudeCall(messages, system) {
 
 async function claudeVision(base64, mimeType, prompt, system) {
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
