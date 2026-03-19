@@ -366,10 +366,7 @@ function BottomNav({ screen, setScreen }) {
 
 export default function App() {
   const [screen, setScreen] = useState("home");
-  const [myPlants, setMyPlants] = useState([
-    { id: 1, name: "거실 몬스테라", type: "몬스테라", emoji: "🌿", lastWatered: new Date(Date.now() - 9 * 86400000).toISOString().split("T")[0], interval: 7 },
-    { id: 2, name: "침실 산세베리아", type: "산세베리아", emoji: "🌵", lastWatered: new Date(Date.now() - 5 * 86400000).toISOString().split("T")[0], interval: 21 },
-  ]);
+  const [myPlants, setMyPlants] = useState([]);
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif', background: C.bg, maxWidth: 430, margin: "0 auto", minHeight: "100dvh", display: "flex", flexDirection: "column", position: "relative" }}>
       <style>{`* { box-sizing: border-box; } button:active { opacity: 0.75; transform: scale(0.98); } input::placeholder { color: #b0ada5; } ::-webkit-scrollbar { display: none; } @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-5px); opacity: 1; } }`}</style>
