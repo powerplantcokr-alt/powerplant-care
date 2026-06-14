@@ -34,7 +34,7 @@ const PIC_IMG = {
 
 // 알림 사전 신청 번호 수집용 웹훅 (n8n → 구글시트 추천).
 // 이 URL을 채우기 전까지는 신청 번호가 고객 폰에만 저장되니, QR 카드 배포 전에 꼭 채워주세요.
-const SUBSCRIBE_WEBHOOK = "";
+const SUBSCRIBE_WEBHOOK = "https://script.google.com/macros/s/AKfycbxWxQouBrpevkZMxRDPR1kGr_xm95nq73uv6DAd18lxiClLyb9y4xHNbY0YFgIvpIwfdw/exec";
 
 /* ─── Plant species (Powerplant lineup) ─────────────────────────── */
 const SPECIES = [
@@ -477,7 +477,9 @@ export default function PowerplantCare() {
         onSave={(s) => {
           setSub(s);
           if (SUBSCRIBE_WEBHOOK) fetch(SUBSCRIBE_WEBHOOK, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ ...s, buddiesDetail: buddies.map((b) => ({ name: b.name, species: infoOf(b).name, waterDays: infoOf(b).water, lastWater: b.waterLog[b.waterLog.length - 1] || null })) }),
           }).catch(() => {});
         }} onCancelSub={() => { setSub(null); ping("알림 신청을 해지했어요"); }} />}
