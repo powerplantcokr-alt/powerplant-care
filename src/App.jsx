@@ -828,6 +828,7 @@ ${buddyContext(buddies)}
 - 버디 목록의 정보(이름, 종, 마지막 물주기)를 최우선 근거로, 이름을 불러주며 그 버디에 맞게 답하세요.
 - 확신이 없거나 위험할 수 있는 처치는 단정하지 말고 "정확한 진단은 파워플랜트 카카오 채널로 문의해 주세요"라고 안내하세요.
 - 따뜻하고 쉬운 한국어로 2~5문장. 이모지·과장 금지. 필요하면 오늘 기준 며칠 됐는지 계산해 알려주세요.
+- 식물 이름을 모를 땐 아무 이름이나 단정하지 말고 "흔치 않은 종 같아요" 또는 "○○ 계열로 보여요"처럼 솔직하게 말하세요. 틀린 단정보다 정직한 추정이 신뢰를 줍니다.
 
 종 자동 등록(중요):
 - 목록에 '종 미확인' 버디가 있으면, 고객의 설명(잎 모양·무늬·줄기 등)을 한두 가지 가볍게 물어 종을 좁혀가세요.
@@ -920,12 +921,25 @@ function Check({ buddies, onSpecies }) {
           ? `${buddy.name} — 종 미확인(고객이 '기타'로 등록) · 마지막 물주기 ${wlast}`
           : `${buddy.name} (${sp0.name}${sp0.latin ? ", " + sp0.latin : ""}) — 마지막 물주기 ${wlast}, 권장 주기 ${sp0.water}일`)
         : "종 정보 없음 (사진으로 추정)";
-      const system = `당신은 식물 브랜드 '파워플랜트'의 식물 건강 진단 전문가입니다. 사진 속 식물의 상태를 진단하세요.
+      const system = `당신은 식물 브랜드 '파워플랜트'의 식물 건강 진단 전문가입니다. 사진 속 식물을 친절하고 정직하게 진단하세요.
 대상 버디: ${who}
-반드시 아래 JSON 형식으로만, 다른 텍스트·마크다운 없이 답하세요. 한국어, 쉬운 말.
-{"plant":"사진 속 식물 추정(한글)","status":"좋음|주의|위험","summary":"한두 문장 상태 요약","causes":["의심 원인 1","의심 원인 2"],"care":["지금 해줄 일 1","지금 해줄 일 2","지금 해줄 일 3"]}
-확신이 어려우면 status는 "주의"로 하고 causes에 그 이유를 적으세요. 식물이 아닌 사진이면 summary에 그렇게 적고 causes/care는 빈 배열로.
-대상 버디의 종이 미확인이고 사진으로 종을 충분히 확신할 수 있으면, 위 JSON에 species 필드를 추가하세요(확신이 없으면 절대 추가하지 마세요):
+
+[진단 원칙 — 반드시 지킬 것]
+1. 사진에 실제로 보이는 것만 근거로 삼으세요. 보이지 않는 부분(뿌리 상태, 흙 속, 화분 바닥 등)은 추측하거나 지어내지 마세요.
+2. 식물 이름(plant)은 확신 정도를 솔직히 반영하세요.
+   - 흔한 식물이고 확실하면: 정확한 이름 (예: "몬스테라")
+   - 애매하면: 계열로 (예: "스킨답서스 계열로 보여요") 그리고 confidence를 "보통" 또는 "낮음"으로.
+   - 흔치 않아 단정이 어려우면: "흔치 않은 종이라 정확한 이름은 어려워요"라고 솔직히. 절대 아무 이름이나 단정하지 마세요. 틀린 단정보다 정직한 추정이 낫습니다.
+3. 상태(status)는 사진 속 '눈에 보이는 증상'을 먼저 관찰한 뒤 판단하세요. 잎 색(노랑·갈변·검음·시듦), 잎 끝/가장자리 상태, 반점, 처짐, 웃자람 등 보이는 신호를 summary에 구체적으로 적으세요.
+4. 원인(causes)은 단정하지 말고 '가능성 높은 순서'로 1~2개만. 흔한 원인(과습·물부족·빛부족·직사광)을 우선 고려하세요.
+5. 처치(care)는 지금 당장 할 수 있는 구체적 행동으로. 위험하거나 확신 없는 처치는 "정확한 진단은 파워플랜트 카카오 채널로 사진과 함께 문의해 주세요"로 안내하세요.
+
+반드시 아래 JSON 형식으로만, 다른 텍스트·마크다운 없이 답하세요. 한국어, 초등학생도 이해할 쉬운 말.
+{"plant":"식물 추정 이름(확신 없으면 계열·과로)","confidence":"높음|보통|낮음","status":"좋음|주의|위험","summary":"사진에서 보이는 증상을 구체적으로 한두 문장","causes":["가능성 높은 원인1","원인2"],"care":["지금 할 일1","지금 할 일2","지금 할 일3"]}
+- 식물 상태가 건강하면 causes는 빈 배열, care는 유지 관리 팁으로.
+- 식물이 아닌 사진이면 plant는 "식물이 아니에요", summary에 설명, causes/care는 빈 배열.
+
+대상 버디의 종이 미확인이고 confidence가 "높음"일 때만, 위 JSON에 species 필드를 추가하세요(보통·낮음이면 절대 추가하지 마세요):
 "species":{"match":"아래 id 중 하나 또는 null","name":"한글 종명","latin":"학명","water":물주기일수숫자,"light":"빛 조건","temp":"적정 온도범위","tip":"관리 한 줄","pic":"pachira|monstera|blades|zz|palm|fern|trail|pearls|pepe|cone|sprout 중 모양이 가장 비슷한 것"}
 match 가능 id: pachira, monstera, sansevieria, stuckyi, zz, tablepalm, areca, fern, asparagus, scindapsus, ivy, pearls, pepe, wilma, schefflera.`;
       const raw = await askClaude({
@@ -992,7 +1006,7 @@ match 가능 id: pachira, monstera, sansevieria, stuckyi, zz, tablepalm, areca, 
           <div className="diag-hd">
             <span className="diag-dot" style={{ background: statusColor }} />
             <b>{result.status || "주의"}</b>
-            {result.plant ? <span className="diag-plant">{result.plant}</span> : null}
+            {result.plant ? <span className="diag-plant">{result.plant}{result.confidence && result.confidence !== "높음" ? <em className="diag-conf"> · 추정</em> : null}</span> : null}
           </div>
           <p className="diag-sum">{result.summary}</p>
           {result.causes && result.causes.length > 0 && (
@@ -1257,6 +1271,7 @@ input{font:inherit;color:var(--ink)}
 .diag-hd{display:flex;align-items:center;gap:8px;font-size:16px}
 .diag-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink)}
 .diag-plant{font-size:12px;color:var(--muted);margin-left:auto}
+.diag-conf{font-style:normal;color:#c98a2e;font-weight:700}
 .diag-sum{font-size:14px;line-height:1.7;margin:10px 0 4px}
 .diag-sec{margin-top:14px;display:flex;flex-direction:column;gap:7px}
 .diag-li{font-size:13.5px;line-height:1.6;padding-left:14px;position:relative}
