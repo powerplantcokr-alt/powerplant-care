@@ -37,6 +37,48 @@ const PIC_IMG = {
 const SUBSCRIBE_WEBHOOK = "https://script.google.com/macros/s/AKfycbxWxQouBrpevkZMxRDPR1kGr_xm95nq73uv6DAd18lxiClLyb9y4xHNbY0YFgIvpIwfdw/exec";
 const KAKAO_CHAT = "http://pf.kakao.com/_lIxiVj/chat"; // 파워플랜트 1:1 상담 채팅
 
+// 카카오 상담으로 넘어갈 때, 상담 맥락을 요약해 클립보드에 복사한다.
+// origin: "ai" | "check"  /  extra: 마지막 질문 또는 진단 결과 텍스트
+function buildKakaoSummary({ buddies, origin, extra }) {
+  const tag = origin === "check" ? "사진진단 유입" : "AI상담 유입";
+  const lines = [];
+  lines.push("🌱 [파워플랜트 " + tag + "]");
+  lines.push("─────────────");
+  if (buddies && buddies.length) {
+    buddies.forEach((b) => {
+      const sp = infoOf(b);
+      const dplus = daysBetween(b.since, todayKey());
+      const last = b.waterLog && b.waterLog.length ? [...b.waterLog].sort().slice(-1)[0] : null;
+      const lastTxt = last ? (() => { const p = last.split("-"); return p.length === 3 ? Number(p[1]) + "/" + Number(p[2]) : last; })() : "기록 없음";
+      lines.push("버디: " + b.name + " (" + sp.name + ")");
+      lines.push("함께한 지: " + dplus + "일째 · 마지막 물주기: " + lastTxt);
+    });
+  } else {
+    lines.push("등록된 버디 없음");
+  }
+  lines.push("─────────────");
+  if (extra) lines.push(extra);
+  lines.push("");
+  lines.push("위 내용으로 상담 도와주세요.");
+  return lines.join("\n");
+}
+
+// 요약을 복사하고 카카오 채팅을 연다(앵커 기본 동작으로 열리므로 복사만 수행).
+function copyKakaoSummary(text, ping) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (ping) ping("상담 내용이 복사됐어요. 카카오톡에 붙여넣기(길게 눌러 붙여넣기) 해주세요");
+  } catch (e) {}
+}
+
 /* ─── Plant species (Powerplant lineup) ─────────────────────────── */
 const SPECIES = [
   { id: "pachira",    name: "파키라",       latin: "Pachira aquatica",      pic: "pachira",  water: 9,  light: "밝은 간접광",      temp: "16–28°C", tip: "겉흙 3cm가 말랐을 때 듬뿍. 과습이 가장 큰 적이에요." },
@@ -465,8 +507,8 @@ export default function PowerplantCare() {
           <Header onHome={() => setTab("home")} />
           <main className="scroll">
             {tab === "home"  && <Home buddies={buddies} onAdd={() => setReg({ step: 1 })} onOpen={setSheet} onWater={waterToday} onFind={goCheck} nudge={showNudge} onBackup={() => setNotify("backup")} onNudgeClose={() => setNudgeOff(true)} />}
-            {tab === "ask"   && <Ask buddies={buddies} onSpecies={applySpecies} />}
-            {tab === "check" && <Check buddies={buddies} onSpecies={applySpecies} />}
+            {tab === "ask"   && <Ask buddies={buddies} onSpecies={applySpecies} ping={ping} />}
+            {tab === "check" && <Check buddies={buddies} onSpecies={applySpecies} ping={ping} />}
             {tab === "water" && <Water buddies={buddies} onToggle={toggleLog} onWater={waterToday} onAlarm={() => setNotify("alarm")} sub={sub} />}
           </main>
           <TabBar tab={tab} setTab={setTab} />
@@ -807,7 +849,7 @@ function NotifyModal({ mode, buddies, sub, onClose, onSave, onCancelSub }) {
 
 /* ─── AI ask ────────────────────────────────────────────────────── */
 const ASK_SUGGEST = ["물은 얼마나 자주 줘야 해요?", "잎끝이 갈색으로 변해요", "분갈이는 언제 하나요?", "여름철엔 뭘 조심해야 해요?"];
-function Ask({ buddies, onSpecies }) {
+function Ask({ buddies, onSpecies, ping }) {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -880,9 +922,14 @@ ${buddyContext(buddies)}
         {msgs.map((m, i) => (
           <div key={i}>
             <div className={"bub " + m.role}>{m.content}</div>
-            {m.role === "assistant" && KAKAO_CHAT && /카카오|상담|채널|문의/.test(m.content) && (
-              <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer">{I.chat()} 파워플랜트 1:1 상담 열기</a>
-            )}
+            {m.role === "assistant" && KAKAO_CHAT && /카카오|상담|채널|문의/.test(m.content) && (() => {
+              const lastQ = [...msgs].slice(0, i).reverse().find((x) => x.role === "user");
+              const summary = buildKakaoSummary({ buddies, origin: "ai", extra: lastQ ? "AI에게 물어본 내용:\n\"" + lastQ.content + "\"" : null });
+              return (
+                <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer"
+                  onClick={() => copyKakaoSummary(summary, ping)}>{I.chat()} 파워플랜트 1:1 상담 열기</a>
+              );
+            })()}
             {m.suggest && (() => {
               const t = buddies.find((b) => b.name === m.suggest.buddy) || buddies.find(isUnknown);
               return t && isUnknown(t) ? (
@@ -907,7 +954,7 @@ ${buddyContext(buddies)}
 }
 
 /* ─── photo check ───────────────────────────────────────────────── */
-function Check({ buddies, onSpecies }) {
+function Check({ buddies, onSpecies, ping }) {
   const [sel, setSel] = useState(buddies.length ? buddies[0].id : null);
   const [img, setImg] = useState(null);   // {b64, preview}
   const [busy, setBusy] = useState(false);
@@ -1036,11 +1083,15 @@ match 가능 id: pachira, monstera, sansevieria, stuckyi, zz, tablepalm, areca, 
               onApply={() => { const spd = result.species; onSpecies(buddy.id, spd); setResult((r) => ({ ...r, species: null, speciesApplied: `${buddy.name} → ${spd.name}` })); }} />
           )}
           {result.speciesApplied && <div className="idok">{result.speciesApplied} 이름표를 채웠어요</div>}
-          {KAKAO_CHAT && result.plant !== "식물이 아니에요" && (
-            result.status === "위험"
-              ? <a className="kakao-cta strong" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer">{I.chat()} 전문가에게 바로 상담하기</a>
-              : <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer">{I.chat()} 더 궁금하면 1:1 상담</a>
-          )}
+          {KAKAO_CHAT && result.plant !== "식물이 아니에요" && (() => {
+            const diagTxt = "사진진단 결과: " + (result.plant || "식물") + " · 상태 " + (result.status || "주의")
+              + (result.summary ? "\n" + result.summary : "")
+              + (result.causes && result.causes.length ? "\n의심 원인: " + result.causes.join(", ") : "");
+            const summary = buildKakaoSummary({ buddies: buddy ? [buddy] : [], origin: "check", extra: diagTxt });
+            return result.status === "위험"
+              ? <a className="kakao-cta strong" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer" onClick={() => copyKakaoSummary(summary, ping)}>{I.chat()} 전문가에게 바로 상담하기</a>
+              : <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer" onClick={() => copyKakaoSummary(summary, ping)}>{I.chat()} 더 궁금하면 1:1 상담</a>;
+          })()}
           <div className="prevbtns">
             <button className="btn-line grow" onClick={() => { setImg(null); setResult(null); }}>다른 사진으로 진단</button>
           </div>
