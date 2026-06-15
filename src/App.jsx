@@ -35,6 +35,7 @@ const PIC_IMG = {
 // 알림 사전 신청 번호 수집용 웹훅 (n8n → 구글시트 추천).
 // 이 URL을 채우기 전까지는 신청 번호가 고객 폰에만 저장되니, QR 카드 배포 전에 꼭 채워주세요.
 const SUBSCRIBE_WEBHOOK = "https://script.google.com/macros/s/AKfycbxWxQouBrpevkZMxRDPR1kGr_xm95nq73uv6DAd18lxiClLyb9y4xHNbY0YFgIvpIwfdw/exec";
+const KAKAO_CHAT = "http://pf.kakao.com/_lIxiVj/chat"; // 파워플랜트 1:1 상담 채팅
 
 /* ─── Plant species (Powerplant lineup) ─────────────────────────── */
 const SPECIES = [
@@ -347,6 +348,7 @@ const I = {
   x: () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>),
   camera: () => (<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8c0-1.1.9-2 2-2h1.5l1.2-1.6c.4-.5 1-.9 1.6-.9h3.4c.6 0 1.2.4 1.6.9L16.5 6H18c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V8Z" /><circle cx="12" cy="12" r="3.4" /></svg>),
   drop: (c = INK) => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round"><path d="M12 3.5C9 8 6.5 11 6.5 14.5a5.5 5.5 0 0 0 11 0C17.5 11 15 8 12 3.5Z" /></svg>),
+  chat: (c = "currentColor") => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "-3px", marginRight: 6 }}><path d="M21 11.5c0 4.1-4 7.5-9 7.5-1 0-2-.1-2.9-.4L4 20l1.2-3.4C3.8 15.3 3 13.5 3 11.5 3 7.4 7 4 12 4s9 3.4 9 7.5Z" /></svg>),
 };
 
 /* ─── image resize → base64 jpeg ────────────────────────────────── */
@@ -442,7 +444,7 @@ export default function PowerplantCare() {
     ping(`${b ? b.name : "버디"}의 종을 등록했어요`);
   };
   const goCheck = () => { setSheet(null); setTab("check"); };
-  const nudgeReady = !nudgeOff && !sub && (buddies.length >= 2 || buddies.reduce((n, b) => n + b.waterLog.length, 0) >= 3);
+  const nudgeReady = !nudgeOff && !sub && (buddies.length >= 3 || buddies.reduce((n, b) => n + b.waterLog.length, 0) >= 5);
   const showNudge = nudgeReady; // 홈 카드(놓친 고객 대비)
   // 조건이 처음 충족되는 순간 딱 한 번 팝업으로 띄움
   useEffect(() => {
@@ -480,7 +482,7 @@ export default function PowerplantCare() {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ ...s, buddiesDetail: buddies.map((b) => ({ name: b.name, species: infoOf(b).name, waterDays: infoOf(b).water, lastWater: b.waterLog[b.waterLog.length - 1] || null })) }),
+            body: JSON.stringify({ ...s, buddiesDetail: buddies.map((b) => ({ name: b.name, species: infoOf(b).name, waterDays: infoOf(b).water, lastWater: b.waterLog[b.waterLog.length - 1] || null, waterDates: [...b.waterLog].sort() })) }),
           }).catch(() => {});
         }} onCancelSub={() => { setSub(null); ping("알림 신청을 해지했어요"); }} />}
       {toast && <div className="toast"><span className="toastdot" />{toast}</div>}
@@ -826,6 +828,9 @@ ${buddyContext(buddies)}
 
 규칙:
 - 버디 목록의 정보(이름, 종, 마지막 물주기)를 최우선 근거로, 이름을 불러주며 그 버디에 맞게 답하세요.
+- 말투: 고객에게는 정중한 존댓말로, 식물(버디)은 친근하고 귀엽게 대하세요. 단, 식물에게는 높임말을 쓰지 마세요. 식물은 아끼는 반려 대상이지 윗사람이 아닙니다.
+- 식물을 셀 때 "분"이나 "명"을 쓰지 말고 "개"나 "셋·둘"처럼 자연스럽게 세세요. 식물에 "계시다·있으시다" 같은 높임을 쓰지 말고 "있다"로 쓰세요. (예: "버디가 셋 있네요", "파키라는 9일마다 물을 주세요")
+- 답변에 별표(**), 우물정자(#), 밑줄 같은 마크다운 기호를 절대 쓰지 마세요. 강조가 필요하면 그냥 평범한 문장으로 쓰세요. 출력은 일반 텍스트만.
 - 확신이 없거나 위험할 수 있는 처치는 단정하지 말고 "정확한 진단은 파워플랜트 카카오 채널로 문의해 주세요"라고 안내하세요.
 - 따뜻하고 쉬운 한국어로 2~5문장. 이모지·과장 금지. 필요하면 오늘 기준 며칠 됐는지 계산해 알려주세요.
 - 식물 이름을 모를 땐 아무 이름이나 단정하지 말고 "흔치 않은 종 같아요" 또는 "○○ 계열로 보여요"처럼 솔직하게 말하세요. 틀린 단정보다 정직한 추정이 신뢰를 줍니다.
@@ -843,6 +848,12 @@ ${buddyContext(buddies)}
         try { const j = JSON.parse(tag[1]); if (j && j.name && j.water) suggest = j; } catch (e) {}
         reply = reply.replace(tag[0], "").trim();
       }
+      // 안전장치: 모델이 실수로 넣은 마크다운 강조 기호 제거 (**굵게**, ##제목, __밑줄__)
+      reply = reply
+        .replace(/\*\*(.+?)\*\*/g, "$1")
+        .replace(/__(.+?)__/g, "$1")
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/\*(.+?)\*/g, "$1");
       setMsgs((p) => [...p, { role: "assistant", content: reply || "답변을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.", suggest }]);
     } catch (e) {
       setMsgs((p) => [...p, { role: "assistant", content: "연결이 잠시 매끄럽지 않아요. 한 번만 다시 보내주시겠어요?" }]);
@@ -869,6 +880,9 @@ ${buddyContext(buddies)}
         {msgs.map((m, i) => (
           <div key={i}>
             <div className={"bub " + m.role}>{m.content}</div>
+            {m.role === "assistant" && KAKAO_CHAT && /카카오|상담|채널|문의/.test(m.content) && (
+              <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer">{I.chat()} 파워플랜트 1:1 상담 열기</a>
+            )}
             {m.suggest && (() => {
               const t = buddies.find((b) => b.name === m.suggest.buddy) || buddies.find(isUnknown);
               return t && isUnknown(t) ? (
@@ -1022,10 +1036,14 @@ match 가능 id: pachira, monstera, sansevieria, stuckyi, zz, tablepalm, areca, 
               onApply={() => { const spd = result.species; onSpecies(buddy.id, spd); setResult((r) => ({ ...r, species: null, speciesApplied: `${buddy.name} → ${spd.name}` })); }} />
           )}
           {result.speciesApplied && <div className="idok">{result.speciesApplied} 이름표를 채웠어요</div>}
+          {KAKAO_CHAT && result.plant !== "식물이 아니에요" && (
+            result.status === "위험"
+              ? <a className="kakao-cta strong" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer">{I.chat()} 전문가에게 바로 상담하기</a>
+              : <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer">{I.chat()} 더 궁금하면 1:1 상담</a>
+          )}
           <div className="prevbtns">
             <button className="btn-line grow" onClick={() => { setImg(null); setResult(null); }}>다른 사진으로 진단</button>
           </div>
-          <p className="micro center">상태가 걱정되면 파워플랜트 카카오 채널로 사진과 함께 문의해 주세요.</p>
         </div>
       )}
     </div>
@@ -1269,6 +1287,8 @@ input{font:inherit;color:var(--ink)}
 .errbox{margin-top:14px;border:1.5px solid #d23b2f;color:#d23b2f;border-radius:14px;padding:13px 15px;font-size:13.5px;line-height:1.6}
 .diag{border:1.5px solid var(--ink);border-radius:18px;padding:16px;margin-top:16px}
 .diag-hd{display:flex;align-items:center;gap:8px;font-size:16px}
+.kakao-cta{display:inline-flex;align-items:center;justify-content:center;margin:10px 0 2px;padding:11px 16px;border-radius:12px;background:#FEE500;color:#191600;font-size:13.5px;font-weight:800;text-decoration:none;border:1px solid rgba(0,0,0,.06)}
+.kakao-cta.strong{display:flex;width:100%;font-size:14.5px;padding:14px;margin:12px 0 4px}
 .diag-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink)}
 .diag-plant{font-size:12px;color:var(--muted);margin-left:auto}
 .diag-conf{font-style:normal;color:#c98a2e;font-weight:700}
