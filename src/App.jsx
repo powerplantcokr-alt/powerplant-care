@@ -81,22 +81,22 @@ function copyKakaoSummary(text, ping) {
 
 /* ─── Plant species (Powerplant lineup) ─────────────────────────── */
 const SPECIES = [
-  { id: "pachira",    name: "파키라",       latin: "Pachira aquatica",      pic: "pachira",  water: 9,  light: "밝은 간접광",      temp: "16–28°C", tip: "겉흙 3cm가 말랐을 때 듬뿍. 과습이 가장 큰 적이에요.", care: "과습에 매우 약함. 뿌리가 계속 젖어 있으면 줄기 아래가 물러지고 잎이 노랗게 떨어짐. 통통한 줄기에 물을 저장해 자주 줄 필요 없음. 잎 끝 갈변은 보통 과습이거나 공기가 너무 건조할 때. 겉흙 3cm가 마른 뒤 듬뿍." },
-  { id: "monstera",   name: "몬스테라",     latin: "Monstera deliciosa",    pic: "monstera", water: 10, light: "밝은 간접광",      temp: "18–28°C", tip: "잎의 찢김은 빛을 잘 받고 있다는 신호. 직사광선은 피해요.", care: "빛이 부족하면 잎이 갈라지지 않고 새 잎이 작게 남. 잎 끝 갈변은 물 부족이나 너무 건조한 공기, 비료 과다일 수 있음. 공중뿌리는 정상이니 자르지 말 것. 직사광은 잎이 탐." },
-  { id: "sansevieria",name: "산세베리아",   latin: "Sansevieria trifasciata",pic:"blades",   water: 21, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "한 달에 한두 번이면 충분. 물을 잊는 편이 오히려 안전해요.", care: "다육질이라 극도로 과습에 약함. 물을 자주 주면 뿌리와 잎 밑동이 물러 무름병이 옴. 잎이 주름지거나 옆으로 눕는 건 과습 신호일 때가 많음. 한 달에 한두 번이면 충분.", hidden: true },
-  { id: "stuckyi",    name: "스투키",       latin: "Sansevieria stuckyi",   pic: "blades",   water: 24, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "흙이 속까지 완전히 마른 뒤에만. 겨울엔 더 길게 쉬어가요.", care: "다육질이라 과습이 치명적. 흙이 속까지 완전히 마른 뒤에만 물을 줌. 겨울엔 거의 쉬어감. 잎 밑동이 무르면 과습." },
-  { id: "zz",         name: "금전수",       latin: "Zamioculcas zamiifolia",pic: "zz",       water: 18, light: "반음지도 OK",      temp: "16–28°C", tip: "잎이 도톰한 건 물을 저장한다는 뜻. 자주 주지 않아도 돼요.", care: "알줄기에 물을 저장해 가뭄에 강함. 과습이 거의 유일한 적이고, 잎이 노래지면 대개 물이 많아서임. 어두운 곳도 잘 견딤. 자주 주지 말 것." },
-  { id: "tablepalm",  name: "테이블야자",   latin: "Chamaedorea elegans",   pic: "img_tablepalm",     water: 7,  light: "밝은 간접광",      temp: "16–26°C", tip: "건조하면 잎끝이 갈색이 돼요. 가끔 분무를 좋아해요.", care: "습도를 좋아함. 건조한 실내나 히터·에어컨 바람을 맞으면 잎 끝부터 갈색으로 바삭하게 마름. 분무가 도움. 과습도 주의하되 완전히 마르게 두지는 말 것." },
-  { id: "areca",      name: "아레카야자",   latin: "Dypsis lutescens",      pic: "img_areca",     water: 8,  light: "밝은 간접광",      temp: "18–28°C", tip: "공기정화 대표 버디. 통풍이 잘 되는 자리를 좋아해요.", care: "통풍이 중요. 잎 끝 갈변은 보통 공기가 건조하거나, 수돗물 속 염분·불소가 쌓였거나, 물이 부족할 때. 정수한 물이나 하루 받아둔 물을 권장. 과습 시 뿌리가 약해짐." },
-  { id: "fern",       name: "보스턴고사리", latin: "Nephrolepis exaltata",  pic: "img_fern",     water: 5,  light: "반음지",           temp: "16–24°C", tip: "마르지 않게가 핵심. 욕실처럼 습한 곳에서 잘 자라요.", care: "습도가 가장 중요한 식물(60% 이상 선호). 흙이나 공기가 마르면 즉시 잎 끝과 잎 전체가 바삭하게 갈변하고 우수수 떨어짐. 흙이 마르지 않게 꾸준히 촉촉하게. 건조가 최대 적이고 직사광은 안 됨." },
-  { id: "asparagus",  name: "아스파라거스", latin: "Asparagus nanus",       pic: "img_asparagus",     water: 6,  light: "밝은 간접광",      temp: "16–26°C", tip: "잎이 노래지면 물이 부족하다는 첫 신호예요.", care: "잎처럼 보이는 가지가 노랗게 변하거나 우수수 떨어지면 물 부족·빛 부족·건조한 공기가 원인. 습도를 좋아함. 과습이면 뿌리가 무름." },
-  { id: "scindapsus", name: "스킨답서스",   latin: "Epipremnum aureum",     pic: "img_scindapsus",    water: 9,  light: "반음지도 OK",      temp: "16–28°C", tip: "초보 추천 1순위. 잎이 처지면 물 달라는 표현이에요.", care: "매우 강건해 초보에게 좋음. 잎이 축 처지면 물 달라는 신호. 과습이면 뿌리가 무르고 잎이 노래짐. 어두워도 견디지만 무늬가 옅어짐." },
-  { id: "ivy",        name: "아이비",       latin: "Hedera helix",          pic: "img_ivy",    water: 8,  light: "밝은 간접광",      temp: "14–24°C", tip: "더위에 약해요. 여름엔 통풍과 반그늘을 챙겨주세요.", care: "더위와 건조에 약함. 잎 끝이 마르는 건 공기가 건조하거나 응애(거미진드기)가 생겼을 때가 흔함. 잎에 작은 반점과 거미줄이 보이면 응애를 의심. 여름엔 통풍과 반그늘." },
-  { id: "pearls",     name: "녹영",         latin: "Senecio rowleyanus",    pic: "pearls",   water: 14, light: "밝은 곳",          temp: "15–26°C", tip: "콩알이 쪼글해지면 그때 물을. 과습이면 알이 터져요.", care: "다육이라 콩알이 쪼글해지면 물 부족, 알이 물러 터지면 과습. 빛은 충분히. 물은 드물게.", hidden: true },
-  { id: "pepe",       name: "수박페페",     latin: "Peperomia argyreia",    pic: "pepe",     water: 10, light: "밝은 간접광",      temp: "18–26°C", tip: "수박 무늬 잎이 매력. 잎에 물이 닿지 않게 흙에만 주세요.", care: "잎에 물이 닿으면 무르기 쉬워 흙에만 줌. 과습에 약함. 잎이 처지면 물 부족일 수도, 과습일 수도 있으니 흙 상태로 판단." },
-  { id: "wilma",      name: "율마",         latin: "Cupressus macrocarpa",  pic: "cone",     water: 4,  light: "직사광 가까이",    temp: "10–24°C", tip: "물과 해를 가장 많이 찾는 버디. 마르면 회복이 어려워요.", care: "물과 빛을 가장 많이 요구. 한 번 바짝 마르면 갈색으로 변하고 회복이 거의 안 됨(되돌릴 수 없음). 통풍과 햇빛이 필요. 속까지 갈변했다면 회생이 어려움." },
-  { id: "schefflera", name: "홍콩야자",     latin: "Schefflera arboricola", pic: "img_schefflera",  water: 10, light: "밝은 간접광",      temp: "16–28°C", tip: "환경 적응력이 좋아요. 가지치기로 모양을 잡아줄 수 있어요.", care: "적응력이 좋음. 잎을 갑자기 떨구는 건 자리 이동·빛 변화 같은 환경 급변 때문일 때가 많음. 과습이면 잎이 검게, 빛이 부족하면 웃자람." },
-  { id: "etc",        name: "기타 버디",    latin: "My green buddy",        pic: "img_etc",   water: null, light: null,             temp: null,      tip: "AI 상담이나 사진 진단으로 종을 알아내면 자동으로 채워드려요.", care: "아직 종을 모르는 버디. 일반론으로 답하기보다 고객에게 잎 모양·무늬·줄기 특징을 물어 종을 좁힌 뒤, 그 종에 맞춰 답할 것." },
+  { id: "pachira",    name: "파키라",       latin: "Pachira aquatica",      pic: "pachira",  water: 9, growthDays: 150,  light: "밝은 간접광",      temp: "16–28°C", tip: "겉흙 3cm가 말랐을 때 듬뿍. 과습이 가장 큰 적이에요.", care: "과습에 매우 약함. 뿌리가 계속 젖어 있으면 줄기 아래가 물러지고 잎이 노랗게 떨어짐. 통통한 줄기에 물을 저장해 자주 줄 필요 없음. 잎 끝 갈변은 보통 과습이거나 공기가 너무 건조할 때. 겉흙 3cm가 마른 뒤 듬뿍." },
+  { id: "monstera",   name: "몬스테라",     latin: "Monstera deliciosa",    pic: "monstera", water: 10, growthDays: 120, light: "밝은 간접광",      temp: "18–28°C", tip: "잎의 찢김은 빛을 잘 받고 있다는 신호. 직사광선은 피해요.", care: "빛이 부족하면 잎이 갈라지지 않고 새 잎이 작게 남. 잎 끝 갈변은 물 부족이나 너무 건조한 공기, 비료 과다일 수 있음. 공중뿌리는 정상이니 자르지 말 것. 직사광은 잎이 탐." },
+  { id: "sansevieria",name: "산세베리아",   latin: "Sansevieria trifasciata",pic:"blades",   water: 21, growthDays: 300, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "한 달에 한두 번이면 충분. 물을 잊는 편이 오히려 안전해요.", care: "다육질이라 극도로 과습에 약함. 물을 자주 주면 뿌리와 잎 밑동이 물러 무름병이 옴. 잎이 주름지거나 옆으로 눕는 건 과습 신호일 때가 많음. 한 달에 한두 번이면 충분.", hidden: true },
+  { id: "stuckyi",    name: "스투키",       latin: "Sansevieria stuckyi",   pic: "blades",   water: 24, growthDays: 300, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "흙이 속까지 완전히 마른 뒤에만. 겨울엔 더 길게 쉬어가요.", care: "다육질이라 과습이 치명적. 흙이 속까지 완전히 마른 뒤에만 물을 줌. 겨울엔 거의 쉬어감. 잎 밑동이 무르면 과습." },
+  { id: "zz",         name: "금전수",       latin: "Zamioculcas zamiifolia",pic: "zz",       water: 18, growthDays: 240, light: "반음지도 OK",      temp: "16–28°C", tip: "잎이 도톰한 건 물을 저장한다는 뜻. 자주 주지 않아도 돼요.", care: "알줄기에 물을 저장해 가뭄에 강함. 과습이 거의 유일한 적이고, 잎이 노래지면 대개 물이 많아서임. 어두운 곳도 잘 견딤. 자주 주지 말 것." },
+  { id: "tablepalm",  name: "테이블야자",   latin: "Chamaedorea elegans",   pic: "img_tablepalm",     water: 7, growthDays: 150,  light: "밝은 간접광",      temp: "16–26°C", tip: "건조하면 잎끝이 갈색이 돼요. 가끔 분무를 좋아해요.", care: "습도를 좋아함. 건조한 실내나 히터·에어컨 바람을 맞으면 잎 끝부터 갈색으로 바삭하게 마름. 분무가 도움. 과습도 주의하되 완전히 마르게 두지는 말 것." },
+  { id: "areca",      name: "아레카야자",   latin: "Dypsis lutescens",      pic: "img_areca",     water: 8, growthDays: 150,  light: "밝은 간접광",      temp: "18–28°C", tip: "공기정화 대표 버디. 통풍이 잘 되는 자리를 좋아해요.", care: "통풍이 중요. 잎 끝 갈변은 보통 공기가 건조하거나, 수돗물 속 염분·불소가 쌓였거나, 물이 부족할 때. 정수한 물이나 하루 받아둔 물을 권장. 과습 시 뿌리가 약해짐." },
+  { id: "fern",       name: "보스턴고사리", latin: "Nephrolepis exaltata",  pic: "img_fern",     water: 5, growthDays: 90,  light: "반음지",           temp: "16–24°C", tip: "마르지 않게가 핵심. 욕실처럼 습한 곳에서 잘 자라요.", care: "습도가 가장 중요한 식물(60% 이상 선호). 흙이나 공기가 마르면 즉시 잎 끝과 잎 전체가 바삭하게 갈변하고 우수수 떨어짐. 흙이 마르지 않게 꾸준히 촉촉하게. 건조가 최대 적이고 직사광은 안 됨." },
+  { id: "asparagus",  name: "아스파라거스", latin: "Asparagus nanus",       pic: "img_asparagus",     water: 6, growthDays: 100,  light: "밝은 간접광",      temp: "16–26°C", tip: "잎이 노래지면 물이 부족하다는 첫 신호예요.", care: "잎처럼 보이는 가지가 노랗게 변하거나 우수수 떨어지면 물 부족·빛 부족·건조한 공기가 원인. 습도를 좋아함. 과습이면 뿌리가 무름." },
+  { id: "scindapsus", name: "스킨답서스",   latin: "Epipremnum aureum",     pic: "img_scindapsus",    water: 9, growthDays: 90,  light: "반음지도 OK",      temp: "16–28°C", tip: "초보 추천 1순위. 잎이 처지면 물 달라는 표현이에요.", care: "매우 강건해 초보에게 좋음. 잎이 축 처지면 물 달라는 신호. 과습이면 뿌리가 무르고 잎이 노래짐. 어두워도 견디지만 무늬가 옅어짐." },
+  { id: "ivy",        name: "아이비",       latin: "Hedera helix",          pic: "img_ivy",    water: 8, growthDays: 100,  light: "밝은 간접광",      temp: "14–24°C", tip: "더위에 약해요. 여름엔 통풍과 반그늘을 챙겨주세요.", care: "더위와 건조에 약함. 잎 끝이 마르는 건 공기가 건조하거나 응애(거미진드기)가 생겼을 때가 흔함. 잎에 작은 반점과 거미줄이 보이면 응애를 의심. 여름엔 통풍과 반그늘." },
+  { id: "pearls",     name: "녹영",         latin: "Senecio rowleyanus",    pic: "pearls",   water: 14, growthDays: 180, light: "밝은 곳",          temp: "15–26°C", tip: "콩알이 쪼글해지면 그때 물을. 과습이면 알이 터져요.", care: "다육이라 콩알이 쪼글해지면 물 부족, 알이 물러 터지면 과습. 빛은 충분히. 물은 드물게.", hidden: true },
+  { id: "pepe",       name: "수박페페",     latin: "Peperomia argyreia",    pic: "pepe",     water: 10, growthDays: 120, light: "밝은 간접광",      temp: "18–26°C", tip: "수박 무늬 잎이 매력. 잎에 물이 닿지 않게 흙에만 주세요.", care: "잎에 물이 닿으면 무르기 쉬워 흙에만 줌. 과습에 약함. 잎이 처지면 물 부족일 수도, 과습일 수도 있으니 흙 상태로 판단." },
+  { id: "wilma",      name: "율마",         latin: "Cupressus macrocarpa",  pic: "cone",     water: 4, growthDays: 120,  light: "직사광 가까이",    temp: "10–24°C", tip: "물과 해를 가장 많이 찾는 버디. 마르면 회복이 어려워요.", care: "물과 빛을 가장 많이 요구. 한 번 바짝 마르면 갈색으로 변하고 회복이 거의 안 됨(되돌릴 수 없음). 통풍과 햇빛이 필요. 속까지 갈변했다면 회생이 어려움." },
+  { id: "schefflera", name: "홍콩야자",     latin: "Schefflera arboricola", pic: "img_schefflera",  water: 10, growthDays: 150, light: "밝은 간접광",      temp: "16–28°C", tip: "환경 적응력이 좋아요. 가지치기로 모양을 잡아줄 수 있어요.", care: "적응력이 좋음. 잎을 갑자기 떨구는 건 자리 이동·빛 변화 같은 환경 급변 때문일 때가 많음. 과습이면 잎이 검게, 빛이 부족하면 웃자람." },
+  { id: "etc",        name: "기타 버디",    latin: "My green buddy",        pic: "img_etc",   water: null, growthDays: 150, light: null,             temp: null,      tip: "AI 상담이나 사진 진단으로 종을 알아내면 자동으로 채워드려요.", care: "아직 종을 모르는 버디. 일반론으로 답하기보다 고객에게 잎 모양·무늬·줄기 특징을 물어 종을 좁힌 뒤, 그 종에 맞춰 답할 것." },
 ];
 const speciesOf = (id) => SPECIES.find((s) => s.id === id) || SPECIES[SPECIES.length - 1];
 const PICS = ["pachira", "monstera", "blades", "zz", "palm", "fern", "trail", "pearls", "pepe", "cone", "sprout"];
@@ -155,15 +155,36 @@ function careScore(buddy) {
 
 function growthOf(buddy) {
   const w = waterInfo(buddy);
-  const cyc = infoOf(buddy).water || 9;
+  const sp = infoOf(buddy);
+  const cyc = sp.water || 9;
   const wilting = w.last && w.sinceLast != null && w.sinceLast > cyc * 2.5;
   const score = careScore(buddy);
-  let idx = 0;
-  for (let i = 0; i < STAGES.length; i++) if (score >= STAGES[i].need) idx = i;
+
+  // (1) 돌봄 기준 단계: 제때 물 준 횟수
+  let careIdx = 0;
+  for (let i = 0; i < STAGES.length; i++) if (score >= STAGES[i].need) careIdx = i;
+
+  // (2) 시간 기준 단계: 함께한 날 / 식물별 만개 소요일 (실제 성장 속도 반영)
+  const gdays = sp.growthDays || 150;
+  const days = daysBetween(buddy.since, todayKey());
+  const ratio = days / gdays; // 0~1+
+  const timeMarks = [0, 0.2, 0.5, 1.0]; // sprout/growing/lush/bloom 진입 시점
+  let timeIdx = 0;
+  for (let i = 0; i < timeMarks.length; i++) if (ratio >= timeMarks[i]) timeIdx = i;
+
+  // 둘 다 충족해야 다음 단계 — 낮은 쪽을 따른다
+  const idx = Math.min(careIdx, timeIdx);
   const cur = STAGES[idx];
   const next = STAGES[idx + 1] || null;
-  const prog = next ? Math.min(1, (score - cur.need) / (next.need - cur.need)) : 1;
-  return { idx, stage: cur, next, score, prog, wilting, ...w };
+  // 다음 단계까지 진행도: 돌봄·시간 중 더 부족한 쪽 기준
+  let prog = 1;
+  if (next) {
+    const careProg = (score - cur.need) / (next.need - cur.need);
+    const tCur = timeMarks[idx], tNext = timeMarks[idx + 1];
+    const timeProg = (ratio - tCur) / (tNext - tCur);
+    prog = Math.max(0, Math.min(1, Math.min(careProg, timeProg)));
+  }
+  return { idx, stage: cur, next, score, prog, wilting, careIdx, timeIdx, ...w };
 }
 
 /* ─── persistence (배포판: 브라우저 localStorage) ───────────────── */
@@ -689,8 +710,8 @@ function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudg
         <div className="nudge">
           <button className="nudge-x iconbtn" onClick={onNudgeClose} aria-label="닫기">{I.x()}</button>
           <span className="idtag">KEEP</span>
-          <p className="nudge-t">{buddies[0].name}{wa(buddies[0].name)}의 기록이 쌓이고 있어요.<br />폰이 바뀌어도 잃지 않게 보관할까요?</p>
-          <button className="nudge-cta" onClick={onBackup}>카카오로 1초 보관 →</button>
+          <p className="nudge-t">{buddies[0].name}{wa(buddies[0].name)}의 기록이 쌓이고 있어요.<br />폰이 바뀌어도 잃지 않게, 보관 기능을 미리 신청해두시겠어요?</p>
+          <button className="nudge-cta" onClick={onBackup}>기록 보관 미리 신청 →</button>
         </div>
       )}
 
