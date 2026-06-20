@@ -106,6 +106,7 @@ const infoOf = (b) => b.custom
 const isUnknown = (b) => !b.custom && b.speciesId === "etc";
 
 const NAME_IDEAS = ["초코", "몽이", "김초록", "풀", "여름", "송이", "두부", "용기"];
+const FUNNY_NAMES = ["김상추", "박대리", "초록두목", "잎사장님", "광합성장관", "물먹는하마", "떡잎방정", "뿌리부장", "새싹반장", "푸르름", "잎큐", "초롱이", "푸돌이", "노을이", "줄기차", "이파리", "물조아", "잎새", "풀반장", "광합성중", "끼리부장", "초록왕", "잎파리", "쑥쑥이"];
 
 /* ─── date utils ────────────────────────────────────────────────── */
 const pad = (n) => String(n).padStart(2, "0");
@@ -175,14 +176,29 @@ function saveState(state) {
 
 /* ─── Claude API (배포판: /api/chat 프록시 경유, 키는 서버에만) ──── */
 async function askClaude({ system, messages, maxTokens = 1000 }) {
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ max_tokens: maxTokens, system, messages }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "API error");
-  return (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ max_tokens: maxTokens, system, messages }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        const msg = (data.error.message || "").toLowerCase();
+        const transient = res.status === 429 || res.status === 529 || res.status >= 500 || msg.includes("overload") || msg.includes("rate");
+        if (transient && attempt < 2) { lastErr = new Error(data.error.message || "transient"); await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+        throw new Error(data.error.message || "API error");
+      }
+      return (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 2) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+      throw lastErr;
+    }
+  }
+  throw lastErr;
 }
 
 function buddyContext(buddies) {
@@ -587,8 +603,29 @@ function Register({ reg, setReg, onDone, onClose }) {
   const [q, setQ] = useState("");
   const [name, setName] = useState("");
   const [since, setSince] = useState(todayKey());
+  const [naming, setNaming] = useState(false);
   const list = useMemo(() => SPECIES.filter((s) => !s.hidden && (s.name.includes(q) || s.latin.toLowerCase().includes(q.toLowerCase()))), [q]);
   const sp = reg.speciesId ? speciesOf(reg.speciesId) : null;
+
+  const genRandomName = async () => {
+    if (naming) return;
+    setNaming(true);
+    // AI가 실패하거나 빈 응답이어도 항상 이름이 나오도록 로컬 백업을 먼저 준비
+    const fallback = FUNNY_NAMES[Math.floor(Math.random() * FUNNY_NAMES.length)];
+    try {
+      const reply = await askClaude({
+        system: "너는 식물에게 엉뚱하고 웃긴 한국어 별명을 지어주는 작명가야. 식물 종과 안 어울려도 좋으니 빵 터지는 재미있는 이름 하나만 지어줘. 규칙: 한글 2~6글자, 따옴표·설명·이모지·문장부호 없이 이름 단어만 출력. 예시 느낌: 김상추, 박대리, 초록두목, 잎사장님, 물먹는하마, 광합성장관.",
+        messages: [{ role: "user", content: `${sp ? sp.name : "식물"}에게 웃긴 별명 하나만 지어줘. 이름만.` }],
+      });
+      // 첫 단어만 취하고 한글/영문/숫자 외 문자는 제거 (마크다운·문장부호·공백 방어)
+      const raw = (reply || "").trim().split(/\s+/)[0] || "";
+      const clean = raw.replace(/[^가-힣a-zA-Z0-9]/g, "").slice(0, 8);
+      setName(clean || fallback);
+    } catch (e) {
+      setName(fallback);
+    }
+    setNaming(false);
+  };
 
   return (
     <div className="layer">
@@ -618,14 +655,18 @@ function Register({ reg, setReg, onDone, onClose }) {
         <div className="scroll layer-body namebody">
           <div className="namepic"><Pictogram type={sp.pic} size={120} /><div className="namesp">{sp.name} · <i>{sp.latin}</i></div></div>
           <label className="lbl">버디의 이름</label>
-          <input className="search nameinput" placeholder="예: 초코" value={name} maxLength={10} onChange={(e) => setName(e.target.value)} />
+          <input className="search nameinput" placeholder={`예: 초코 (비워두면 '${sp.name}')`} value={name} maxLength={10} onChange={(e) => setName(e.target.value)} />
           <div className="chips">
-            {NAME_IDEAS.map((n) => <button key={n} className={"chip" + (name === n ? " on" : "")} onClick={() => setName(n)}>{n}</button>)}
+            <button className={"chip" + (name === sp.name ? " on" : "")} onClick={() => setName(sp.name)}>{sp.name}</button>
+            {NAME_IDEAS.filter((n) => n !== sp.name).map((n) => <button key={n} className={"chip" + (name === n ? " on" : "")} onClick={() => setName(n)}>{n}</button>)}
           </div>
           <label className="lbl">함께한 첫날</label>
           <input className="search" type="date" value={since} max={todayKey()} onChange={(e) => setSince(e.target.value)} />
-          <button className="btn-ink" disabled={!name.trim()} onClick={() => onDone(reg.speciesId, name, since)}>이름표 달아주기</button>
-          <p className="micro center">{reg.speciesId === "etc" ? "지금은 종을 몰라도 괜찮아요. AI 상담이나 사진 진단에서 종을 알아내면 이름표를 자동으로 채워드려요." : "등록하면 오늘을 첫 물주기로 기록해 두고, 다음 물 줄 날을 알려드려요."}</p>
+          <div className="namebtns">
+            <button className="btn-line dicebtn" onClick={genRandomName} disabled={naming}>{naming ? "짓는 중…" : "🎲 랜덤 이름표"}</button>
+            <button className="btn-ink grow" onClick={() => onDone(reg.speciesId, name.trim() || sp.name, since)}>이름표 달아주기</button>
+          </div>
+          <p className="micro center">{reg.speciesId === "etc" ? "지금은 종을 몰라도 괜찮아요. AI 상담이나 사진 진단에서 종을 알아내면 이름표를 자동으로 채워드려요." : "이름을 비워두면 식물 이름이 그대로 버디 이름이 돼요. 등록하면 오늘을 첫 물주기로 기록해 둘게요."}</p>
         </div>
       )}
     </div>
@@ -856,6 +897,12 @@ function Ask({ buddies, onSpecies, ping }) {
   const endRef = useRef(null);
   useEffect(() => { endRef.current && endRef.current.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
 
+  // 카카오로 넘길 때: 안내 멘트를 채팅에 먼저 띄우고, 대화 요약을 복사
+  const onKakao = (summary) => {
+    copyKakaoSummary(summary, ping);
+    setMsgs((p) => [...p, { role: "assistant", content: "지금까지 나눈 대화를 요약해서 복사해 드렸어요. 카카오톡 상담창이 열리면 붙여넣기(길게 눌러 붙여넣기)만 해주세요. 상담사가 내용을 보고 바로 도와드릴 거예요." }]);
+  };
+
   const send = async (text) => {
     const t = (text || input).trim();
     if (!t || busy) return;
@@ -875,6 +922,7 @@ ${buddyContext(buddies)}
 - 답변에 별표(**), 우물정자(#), 밑줄 같은 마크다운 기호를 절대 쓰지 마세요. 강조가 필요하면 그냥 평범한 문장으로 쓰세요. 출력은 일반 텍스트만.
 - 확신이 없거나 위험할 수 있는 처치는 단정하지 말고 "정확한 진단은 파워플랜트 카카오 채널로 문의해 주세요"라고 안내하세요.
 - 따뜻하고 쉬운 한국어로 2~5문장. 이모지·과장 금지. 필요하면 오늘 기준 며칠 됐는지 계산해 알려주세요.
+- 물주기 주기를 안내할 땐, 권장 주기는 어디까지나 기준일 뿐이며 키우는 환경(온도·습도·빛)에 따라 달라지니 "흙 표면이 말랐는지 직접 확인하고 주는 것이 가장 정확하다"고 꼭 덧붙이세요.
 - 식물 이름을 모를 땐 아무 이름이나 단정하지 말고 "흔치 않은 종 같아요" 또는 "○○ 계열로 보여요"처럼 솔직하게 말하세요. 틀린 단정보다 정직한 추정이 신뢰를 줍니다.
 
 종 자동 등록(중요):
@@ -923,11 +971,12 @@ ${buddyContext(buddies)}
           <div key={i}>
             <div className={"bub " + m.role}>{m.content}</div>
             {m.role === "assistant" && KAKAO_CHAT && /카카오|상담|채널|문의/.test(m.content) && (() => {
-              const lastQ = [...msgs].slice(0, i).reverse().find((x) => x.role === "user");
-              const summary = buildKakaoSummary({ buddies, origin: "ai", extra: lastQ ? "AI에게 물어본 내용:\n\"" + lastQ.content + "\"" : null });
+              const convo = msgs.slice(0, i + 1)
+                .map((x) => (x.role === "user" ? "고객: " : "AI: ") + x.content).join("\n");
+              const summary = buildKakaoSummary({ buddies, origin: "ai", extra: "지금까지 나눈 대화:\n" + convo });
               return (
                 <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer"
-                  onClick={() => copyKakaoSummary(summary, ping)}>{I.chat()} 파워플랜트 1:1 상담 열기</a>
+                  onClick={() => onKakao(summary)}>{I.chat()} 파워플랜트 1:1 상담 열기</a>
               );
             })()}
             {m.suggest && (() => {
@@ -1230,6 +1279,8 @@ input{font:inherit;color:var(--ink)}
 .chips{display:flex;gap:8px;margin:14px 0 4px;overflow-x:auto;padding-bottom:4px}
 .chips.wrap{flex-wrap:wrap;overflow:visible}
 .chip{flex-shrink:0;border:1.5px solid var(--ink);border-radius:999px;padding:8px 14px;font-size:13px;background:var(--paper)}
+.chip.dice{border-style:dashed;font-weight:700}
+.chip.dice:disabled{opacity:.5}
 .chip.on{background:var(--ink);color:#fff;font-weight:700}
 .sticker{display:inline-block;border:1.7px solid var(--ink);border-radius:999px;padding:5px 14px;font-weight:800;font-size:15px;background:var(--paper);box-shadow:2px 2px 0 var(--ink)}
 .sticker-big{font-size:19px;padding:7px 20px}
@@ -1297,6 +1348,10 @@ input{font:inherit;color:var(--ink)}
 .namesp i{font-family:var(--serif)}
 .nameinput{font-size:18px;font-weight:700;text-align:center}
 .namebody .btn-ink{margin-top:22px;margin-bottom:10px}
+.namebtns{display:flex;gap:8px;align-items:stretch;margin-top:22px;margin-bottom:10px}
+.namebtns .btn-ink{margin:0;flex:1}
+.namebtns .dicebtn{flex-shrink:0;white-space:nowrap;background:var(--paper)}
+.namebtns .dicebtn:disabled{opacity:.5}
 
 /* sheet */
 .dim{position:absolute;inset:0;background:rgba(33,33,33,.45);z-index:50;display:flex;align-items:flex-end}
