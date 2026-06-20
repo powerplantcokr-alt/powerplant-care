@@ -462,6 +462,7 @@ export default function PowerplantCare() {
   const [view, setView] = useState("boot");        // boot | welcome | app
   const [reg, setReg] = useState(null);            // null | {step, speciesId, name, since}
   const [sheet, setSheet] = useState(null);        // buddy id
+  const [askSeed, setAskSeed] = useState(null);    // AI 상담을 시작할 버디 id (상세→상담 이동용)
   const [toast, setToast] = useState(null);
   const [notify, setNotify] = useState(null);      // null | "alarm" | "backup"
   const [sub, setSub] = useState(null);            // 알림 사전 신청 정보 {phone, marketing, ...}
@@ -525,6 +526,7 @@ export default function PowerplantCare() {
     ping(`${b ? b.name : "버디"}의 종을 등록했어요`);
   };
   const goCheck = () => { setSheet(null); setTab("check"); };
+  const goAsk = (buddyId) => { setSheet(null); setTab("ask"); setAskSeed(buddyId); };
   const nudgeReady = !nudgeOff && !sub && (buddies.length >= 3 || buddies.reduce((n, b) => n + b.waterLog.length, 0) >= 5);
   const showNudge = nudgeReady; // 홈 카드(놓친 고객 대비)
   // 조건이 처음 충족되는 순간 딱 한 번 팝업으로 띄움
@@ -546,7 +548,7 @@ export default function PowerplantCare() {
           <Header onHome={() => setTab("home")} />
           <main className="scroll">
             {tab === "home"  && <Home buddies={buddies} onAdd={() => setReg({ step: 1 })} onOpen={setSheet} onWater={waterToday} onFind={goCheck} nudge={showNudge} onBackup={() => setNotify("backup")} onNudgeClose={() => setNudgeOff(true)} />}
-            {tab === "ask"   && <Ask buddies={buddies} onSpecies={applySpecies} ping={ping} />}
+            {tab === "ask"   && <Ask buddies={buddies} onSpecies={applySpecies} ping={ping} seed={askSeed} onSeedUsed={() => setAskSeed(null)} />}
             {tab === "check" && <Check buddies={buddies} onSpecies={applySpecies} ping={ping} />}
             {tab === "water" && <Water buddies={buddies} onToggle={toggleLog} onWater={waterToday} onAlarm={() => setNotify("alarm")} sub={sub} />}
           </main>
@@ -555,7 +557,7 @@ export default function PowerplantCare() {
       )}
 
       {reg && <Register reg={reg} setReg={setReg} onDone={addBuddy} onClose={() => { setReg(null); if (!buddies.length) setView("welcome"); else setView("app"); }} />}
-      {sheet && <BuddySheet buddy={buddies.find((b) => b.id === sheet)} onClose={() => setSheet(null)} onWater={waterToday} onRename={renameBuddy} onRemove={removeBuddy} onFind={goCheck} />}
+      {sheet && <BuddySheet buddy={buddies.find((b) => b.id === sheet)} onClose={() => setSheet(null)} onWater={waterToday} onRename={renameBuddy} onRemove={removeBuddy} onFind={goCheck} onAsk={goAsk} />}
       {notify && <NotifyModal mode={notify} buddies={buddies} sub={sub} onClose={() => setNotify(null)}
         onSave={(s) => {
           setSub(s);
@@ -756,7 +758,7 @@ function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudg
 }
 
 /* ─── buddy sheet ───────────────────────────────────────────────── */
-function BuddySheet({ buddy, onClose, onWater, onRename, onRemove, onFind }) {
+function BuddySheet({ buddy, onClose, onWater, onRename, onRemove, onFind, onAsk }) {
   const [editing, setEditing] = useState(false);
   const [nm, setNm] = useState(buddy ? buddy.name : "");
   if (!buddy) return null;
@@ -813,6 +815,7 @@ function BuddySheet({ buddy, onClose, onWater, onRename, onRemove, onFind }) {
           <Row k="NOTE" t="한 줄 메모" v={sp.tip} last />
         </div>
         {unknown && <button className="btn-line full" onClick={onFind}>사진 진단으로 종 알아보기</button>}
+        <button className="btn-line full" onClick={() => onAsk(buddy.id)}>{I.chat()} {buddy.name} AI 상담하기</button>
         <button className="btn-ink" onClick={() => onWater(buddy.id)}>{w.due ? "오늘 물 줬어요" : "지금 물 줬어요로 기록"}</button>
         <button className="bye" onClick={() => onRemove(buddy.id)}>버디 보내주기</button>
       </div>
@@ -913,12 +916,32 @@ function NotifyModal({ mode, buddies, sub, onClose, onSave, onCancelSub }) {
 
 /* ─── AI ask ────────────────────────────────────────────────────── */
 const ASK_SUGGEST = ["물은 얼마나 자주 줘야 해요?", "잎끝이 갈색으로 변해요", "분갈이는 언제 하나요?", "여름철엔 뭘 조심해야 해요?"];
-function Ask({ buddies, onSpecies, ping }) {
+function Ask({ buddies, onSpecies, ping, seed, onSeedUsed }) {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
   useEffect(() => { endRef.current && endRef.current.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
+
+  // 특정 버디로 대화 시작 — AI가 먼저 "무엇이 궁금하세요?"라고 묻는다
+  const startBuddy = (b) => {
+    if (!b) return;
+    const sp = infoOf(b);
+    const msg = isUnknown(b)
+      ? `${b.name}는 아직 종을 모르는 버디예요. 잎 모양이나 무늬, 줄기 느낌을 알려주시면 어떤 식물인지 같이 찾아드릴게요. 무엇이 궁금하세요?`
+      : `${b.name}(${sp.name})에 대해 무엇이 궁금하세요? 물주기, 빛, 분갈이, 잎 상태 등 무엇이든 편하게 물어보세요.`;
+    setMsgs((p) => [...p, { role: "assistant", content: msg }]);
+  };
+
+  // 버디 상세에서 'AI 상담하기'로 넘어온 경우, 해당 버디로 대화 시작
+  useEffect(() => {
+    if (seed) {
+      const b = buddies.find((x) => x.id === seed);
+      if (b) startBuddy(b);
+      onSeedUsed && onSeedUsed();
+    }
+    // eslint-disable-next-line
+  }, [seed]);
 
   // 카카오로 넘길 때: 대화 요약을 복사하고, 안내 멘트 + 실제 열기 버튼을 채팅에 띄운다
   const onKakao = (summary) => {
@@ -997,7 +1020,7 @@ ${buddyContext(buddies)}
             buddies.length ? (
               <div className="chips wrap">
                 {buddies.map((b) => (
-                  <button key={b.id} className="chip buddychip" onClick={() => send(isUnknown(b) ? `${b.name}가 어떤 식물인지 알려줘` : `${b.name} 어떻게 돌봐야 해?`)}>
+                  <button key={b.id} className="chip buddychip" onClick={() => startBuddy(b)}>
                     <Pictogram type={infoOf(b).pic} size={20} /> {b.name}
                   </button>
                 ))}
