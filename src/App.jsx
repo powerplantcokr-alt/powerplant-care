@@ -897,10 +897,10 @@ function Ask({ buddies, onSpecies, ping }) {
   const endRef = useRef(null);
   useEffect(() => { endRef.current && endRef.current.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
 
-  // 카카오로 넘길 때: 안내 멘트를 채팅에 먼저 띄우고, 대화 요약을 복사
+  // 카카오로 넘길 때: 대화 요약을 복사하고, 안내 멘트 + 실제 열기 버튼을 채팅에 띄운다
   const onKakao = (summary) => {
     copyKakaoSummary(summary, ping);
-    setMsgs((p) => [...p, { role: "assistant", content: "지금까지 나눈 대화를 요약해서 복사해 드렸어요. 카카오톡 상담창이 열리면 붙여넣기(길게 눌러 붙여넣기)만 해주세요. 상담사가 내용을 보고 바로 도와드릴 거예요." }]);
+    setMsgs((p) => [...p, { role: "assistant", kakaoReady: true, content: "지금까지 나눈 대화를 요약해서 복사해 드렸어요. 아래 ‘카카오톡 상담 열기’를 누르면 상담창이 열려요. 그 창에서 길게 눌러 붙여넣기만 하시면, 상담사가 대화 내용을 보고 바로 이어서 도와드려요." }]);
   };
 
   const send = async (text) => {
@@ -920,7 +920,9 @@ ${buddyContext(buddies)}
 - 말투: 고객에게는 정중한 존댓말로, 식물(버디)은 친근하고 귀엽게 대하세요. 단, 식물에게는 높임말을 쓰지 마세요. 식물은 아끼는 반려 대상이지 윗사람이 아닙니다.
 - 식물을 셀 때 "분"이나 "명"을 쓰지 말고 "개"나 "셋·둘"처럼 자연스럽게 세세요. 식물에 "계시다·있으시다" 같은 높임을 쓰지 말고 "있다"로 쓰세요. (예: "버디가 셋 있네요", "파키라는 9일마다 물을 주세요")
 - 답변에 별표(**), 우물정자(#), 밑줄 같은 마크다운 기호를 절대 쓰지 마세요. 강조가 필요하면 그냥 평범한 문장으로 쓰세요. 출력은 일반 텍스트만.
-- 확신이 없거나 위험할 수 있는 처치는 단정하지 말고 "정확한 진단은 파워플랜트 카카오 채널로 문의해 주세요"라고 안내하세요.
+- 너는 1차 상담사로서, 고객의 질문에 먼저 끝까지 책임지고 구체적으로 답하라. 원인 가능성과 지금 할 수 있는 조치를 충분히 안내하면 대부분의 질문은 여기서 해결된다.
+- 카카오 채널 안내는 '최후의 예외'일 때만 한다. 다음 경우에만 답변 맨 끝에 "더 자세한 진단이 필요하면 파워플랜트 카카오 채널로 문의해 주세요"를 덧붙여라: (1) 고객이 같은 문제로 이미 몇 번 시도했는데도 안 풀린다고 할 때, (2) 식물이 죽어가는 심각한 상태로 보일 때, (3) 병충해·뿌리 문제처럼 사진이나 실물을 직접 봐야 판단 가능한 경우, (4) 고객이 직접 사람 상담을 원할 때. 그 외 일반적인 관리 질문(물주기·빛·분갈이 시기 등)에는 카카오 안내를 붙이지 말고 네가 끝까지 답하라.
+- 매 답변마다 습관적으로 카카오를 권하지 마라. 충분히 답할 수 있는 질문에 카카오로 떠넘기면 고객이 실망한다.
 - 따뜻하고 쉬운 한국어로 2~5문장. 이모지·과장 금지. 필요하면 오늘 기준 며칠 됐는지 계산해 알려주세요.
 - 물주기 주기를 안내할 땐, 권장 주기는 어디까지나 기준일 뿐이며 키우는 환경(온도·습도·빛)에 따라 달라지니 "흙 표면이 말랐는지 직접 확인하고 주는 것이 가장 정확하다"고 꼭 덧붙이세요.
 - 식물 이름을 모를 땐 아무 이름이나 단정하지 말고 "흔치 않은 종 같아요" 또는 "○○ 계열로 보여요"처럼 솔직하게 말하세요. 틀린 단정보다 정직한 추정이 신뢰를 줍니다.
@@ -970,15 +972,17 @@ ${buddyContext(buddies)}
         {msgs.map((m, i) => (
           <div key={i}>
             <div className={"bub " + m.role}>{m.content}</div>
-            {m.role === "assistant" && KAKAO_CHAT && /카카오|상담|채널|문의/.test(m.content) && (() => {
+            {m.role === "assistant" && !m.kakaoReady && KAKAO_CHAT && /카카오|상담|채널|문의/.test(m.content) && (() => {
               const convo = msgs.slice(0, i + 1)
                 .map((x) => (x.role === "user" ? "고객: " : "AI: ") + x.content).join("\n");
               const summary = buildKakaoSummary({ buddies, origin: "ai", extra: "지금까지 나눈 대화:\n" + convo });
               return (
-                <a className="kakao-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer"
-                  onClick={() => onKakao(summary)}>{I.chat()} 파워플랜트 1:1 상담 열기</a>
+                <button className="kakao-cta" onClick={() => onKakao(summary)}>{I.chat()} 파워플랜트 1:1 상담 준비하기</button>
               );
             })()}
+            {m.kakaoReady && KAKAO_CHAT && (
+              <a className="kakao-cta strong" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer">{I.chat()} 카카오톡 상담 열기</a>
+            )}
             {m.suggest && (() => {
               const t = buddies.find((b) => b.name === m.suggest.buddy) || buddies.find(isUnknown);
               return t && isUnknown(t) ? (
@@ -1393,7 +1397,7 @@ input{font:inherit;color:var(--ink)}
 .errbox{margin-top:14px;border:1.5px solid #d23b2f;color:#d23b2f;border-radius:14px;padding:13px 15px;font-size:13.5px;line-height:1.6}
 .diag{border:1.5px solid var(--ink);border-radius:18px;padding:16px;margin-top:16px}
 .diag-hd{display:flex;align-items:center;gap:8px;font-size:16px}
-.kakao-cta{display:inline-flex;align-items:center;justify-content:center;margin:10px 0 2px;padding:11px 16px;border-radius:12px;background:#FEE500;color:#191600;font-size:13.5px;font-weight:800;text-decoration:none;border:1px solid rgba(0,0,0,.06)}
+.kakao-cta{display:inline-flex;align-items:center;justify-content:center;margin:10px 0 2px;padding:11px 16px;border-radius:12px;background:#FEE500;color:#191600;font-size:13.5px;font-weight:800;text-decoration:none;border:1px solid rgba(0,0,0,.06);font-family:inherit;cursor:pointer}
 .kakao-cta.strong{display:flex;width:100%;font-size:14.5px;padding:14px;margin:12px 0 4px}
 .diag-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink)}
 .diag-plant{font-size:12px;color:var(--muted);margin-left:auto}
