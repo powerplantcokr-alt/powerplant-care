@@ -81,22 +81,22 @@ function copyKakaoSummary(text, ping) {
 
 /* ─── Plant species (Powerplant lineup) ─────────────────────────── */
 const SPECIES = [
-  { id: "pachira",    name: "파키라",       latin: "Pachira aquatica",      pic: "pachira",  water: 9,  light: "밝은 간접광",      temp: "16–28°C", tip: "겉흙 3cm가 말랐을 때 듬뿍. 과습이 가장 큰 적이에요." },
-  { id: "monstera",   name: "몬스테라",     latin: "Monstera deliciosa",    pic: "monstera", water: 10, light: "밝은 간접광",      temp: "18–28°C", tip: "잎의 찢김은 빛을 잘 받고 있다는 신호. 직사광선은 피해요." },
-  { id: "sansevieria",name: "산세베리아",   latin: "Sansevieria trifasciata",pic:"blades",   water: 21, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "한 달에 한두 번이면 충분. 물을 잊는 편이 오히려 안전해요.", hidden: true },
-  { id: "stuckyi",    name: "스투키",       latin: "Sansevieria stuckyi",   pic: "blades",   water: 24, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "흙이 속까지 완전히 마른 뒤에만. 겨울엔 더 길게 쉬어가요." },
-  { id: "zz",         name: "금전수",       latin: "Zamioculcas zamiifolia",pic: "zz",       water: 18, light: "반음지도 OK",      temp: "16–28°C", tip: "잎이 도톰한 건 물을 저장한다는 뜻. 자주 주지 않아도 돼요." },
-  { id: "tablepalm",  name: "테이블야자",   latin: "Chamaedorea elegans",   pic: "img_tablepalm",     water: 7,  light: "밝은 간접광",      temp: "16–26°C", tip: "건조하면 잎끝이 갈색이 돼요. 가끔 분무를 좋아해요." },
-  { id: "areca",      name: "아레카야자",   latin: "Dypsis lutescens",      pic: "img_areca",     water: 8,  light: "밝은 간접광",      temp: "18–28°C", tip: "공기정화 대표 버디. 통풍이 잘 되는 자리를 좋아해요." },
-  { id: "fern",       name: "보스턴고사리", latin: "Nephrolepis exaltata",  pic: "img_fern",     water: 5,  light: "반음지",           temp: "16–24°C", tip: "마르지 않게가 핵심. 욕실처럼 습한 곳에서 잘 자라요." },
-  { id: "asparagus",  name: "아스파라거스", latin: "Asparagus nanus",       pic: "img_asparagus",     water: 6,  light: "밝은 간접광",      temp: "16–26°C", tip: "잎이 노래지면 물이 부족하다는 첫 신호예요." },
-  { id: "scindapsus", name: "스킨답서스",   latin: "Epipremnum aureum",     pic: "img_scindapsus",    water: 9,  light: "반음지도 OK",      temp: "16–28°C", tip: "초보 추천 1순위. 잎이 처지면 물 달라는 표현이에요." },
-  { id: "ivy",        name: "아이비",       latin: "Hedera helix",          pic: "img_ivy",    water: 8,  light: "밝은 간접광",      temp: "14–24°C", tip: "더위에 약해요. 여름엔 통풍과 반그늘을 챙겨주세요." },
-  { id: "pearls",     name: "녹영",         latin: "Senecio rowleyanus",    pic: "pearls",   water: 14, light: "밝은 곳",          temp: "15–26°C", tip: "콩알이 쪼글해지면 그때 물을. 과습이면 알이 터져요.", hidden: true },
-  { id: "pepe",       name: "수박페페",     latin: "Peperomia argyreia",    pic: "pepe",     water: 10, light: "밝은 간접광",      temp: "18–26°C", tip: "수박 무늬 잎이 매력. 잎에 물이 닿지 않게 흙에만 주세요." },
-  { id: "wilma",      name: "율마",         latin: "Cupressus macrocarpa",  pic: "cone",     water: 4,  light: "직사광 가까이",    temp: "10–24°C", tip: "물과 해를 가장 많이 찾는 버디. 마르면 회복이 어려워요." },
-  { id: "schefflera", name: "홍콩야자",     latin: "Schefflera arboricola", pic: "img_schefflera",  water: 10, light: "밝은 간접광",      temp: "16–28°C", tip: "환경 적응력이 좋아요. 가지치기로 모양을 잡아줄 수 있어요." },
-  { id: "etc",        name: "기타 버디",    latin: "My green buddy",        pic: "img_etc",   water: null, light: null,             temp: null,      tip: "AI 상담이나 사진 진단으로 종을 알아내면 자동으로 채워드려요." },
+  { id: "pachira",    name: "파키라",       latin: "Pachira aquatica",      pic: "pachira",  water: 9,  light: "밝은 간접광",      temp: "16–28°C", tip: "겉흙 3cm가 말랐을 때 듬뿍. 과습이 가장 큰 적이에요.", care: "과습에 매우 약함. 뿌리가 계속 젖어 있으면 줄기 아래가 물러지고 잎이 노랗게 떨어짐. 통통한 줄기에 물을 저장해 자주 줄 필요 없음. 잎 끝 갈변은 보통 과습이거나 공기가 너무 건조할 때. 겉흙 3cm가 마른 뒤 듬뿍." },
+  { id: "monstera",   name: "몬스테라",     latin: "Monstera deliciosa",    pic: "monstera", water: 10, light: "밝은 간접광",      temp: "18–28°C", tip: "잎의 찢김은 빛을 잘 받고 있다는 신호. 직사광선은 피해요.", care: "빛이 부족하면 잎이 갈라지지 않고 새 잎이 작게 남. 잎 끝 갈변은 물 부족이나 너무 건조한 공기, 비료 과다일 수 있음. 공중뿌리는 정상이니 자르지 말 것. 직사광은 잎이 탐." },
+  { id: "sansevieria",name: "산세베리아",   latin: "Sansevieria trifasciata",pic:"blades",   water: 21, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "한 달에 한두 번이면 충분. 물을 잊는 편이 오히려 안전해요.", care: "다육질이라 극도로 과습에 약함. 물을 자주 주면 뿌리와 잎 밑동이 물러 무름병이 옴. 잎이 주름지거나 옆으로 눕는 건 과습 신호일 때가 많음. 한 달에 한두 번이면 충분.", hidden: true },
+  { id: "stuckyi",    name: "스투키",       latin: "Sansevieria stuckyi",   pic: "blades",   water: 24, light: "반음지–밝은 곳",   temp: "15–30°C", tip: "흙이 속까지 완전히 마른 뒤에만. 겨울엔 더 길게 쉬어가요.", care: "다육질이라 과습이 치명적. 흙이 속까지 완전히 마른 뒤에만 물을 줌. 겨울엔 거의 쉬어감. 잎 밑동이 무르면 과습." },
+  { id: "zz",         name: "금전수",       latin: "Zamioculcas zamiifolia",pic: "zz",       water: 18, light: "반음지도 OK",      temp: "16–28°C", tip: "잎이 도톰한 건 물을 저장한다는 뜻. 자주 주지 않아도 돼요.", care: "알줄기에 물을 저장해 가뭄에 강함. 과습이 거의 유일한 적이고, 잎이 노래지면 대개 물이 많아서임. 어두운 곳도 잘 견딤. 자주 주지 말 것." },
+  { id: "tablepalm",  name: "테이블야자",   latin: "Chamaedorea elegans",   pic: "img_tablepalm",     water: 7,  light: "밝은 간접광",      temp: "16–26°C", tip: "건조하면 잎끝이 갈색이 돼요. 가끔 분무를 좋아해요.", care: "습도를 좋아함. 건조한 실내나 히터·에어컨 바람을 맞으면 잎 끝부터 갈색으로 바삭하게 마름. 분무가 도움. 과습도 주의하되 완전히 마르게 두지는 말 것." },
+  { id: "areca",      name: "아레카야자",   latin: "Dypsis lutescens",      pic: "img_areca",     water: 8,  light: "밝은 간접광",      temp: "18–28°C", tip: "공기정화 대표 버디. 통풍이 잘 되는 자리를 좋아해요.", care: "통풍이 중요. 잎 끝 갈변은 보통 공기가 건조하거나, 수돗물 속 염분·불소가 쌓였거나, 물이 부족할 때. 정수한 물이나 하루 받아둔 물을 권장. 과습 시 뿌리가 약해짐." },
+  { id: "fern",       name: "보스턴고사리", latin: "Nephrolepis exaltata",  pic: "img_fern",     water: 5,  light: "반음지",           temp: "16–24°C", tip: "마르지 않게가 핵심. 욕실처럼 습한 곳에서 잘 자라요.", care: "습도가 가장 중요한 식물(60% 이상 선호). 흙이나 공기가 마르면 즉시 잎 끝과 잎 전체가 바삭하게 갈변하고 우수수 떨어짐. 흙이 마르지 않게 꾸준히 촉촉하게. 건조가 최대 적이고 직사광은 안 됨." },
+  { id: "asparagus",  name: "아스파라거스", latin: "Asparagus nanus",       pic: "img_asparagus",     water: 6,  light: "밝은 간접광",      temp: "16–26°C", tip: "잎이 노래지면 물이 부족하다는 첫 신호예요.", care: "잎처럼 보이는 가지가 노랗게 변하거나 우수수 떨어지면 물 부족·빛 부족·건조한 공기가 원인. 습도를 좋아함. 과습이면 뿌리가 무름." },
+  { id: "scindapsus", name: "스킨답서스",   latin: "Epipremnum aureum",     pic: "img_scindapsus",    water: 9,  light: "반음지도 OK",      temp: "16–28°C", tip: "초보 추천 1순위. 잎이 처지면 물 달라는 표현이에요.", care: "매우 강건해 초보에게 좋음. 잎이 축 처지면 물 달라는 신호. 과습이면 뿌리가 무르고 잎이 노래짐. 어두워도 견디지만 무늬가 옅어짐." },
+  { id: "ivy",        name: "아이비",       latin: "Hedera helix",          pic: "img_ivy",    water: 8,  light: "밝은 간접광",      temp: "14–24°C", tip: "더위에 약해요. 여름엔 통풍과 반그늘을 챙겨주세요.", care: "더위와 건조에 약함. 잎 끝이 마르는 건 공기가 건조하거나 응애(거미진드기)가 생겼을 때가 흔함. 잎에 작은 반점과 거미줄이 보이면 응애를 의심. 여름엔 통풍과 반그늘." },
+  { id: "pearls",     name: "녹영",         latin: "Senecio rowleyanus",    pic: "pearls",   water: 14, light: "밝은 곳",          temp: "15–26°C", tip: "콩알이 쪼글해지면 그때 물을. 과습이면 알이 터져요.", care: "다육이라 콩알이 쪼글해지면 물 부족, 알이 물러 터지면 과습. 빛은 충분히. 물은 드물게.", hidden: true },
+  { id: "pepe",       name: "수박페페",     latin: "Peperomia argyreia",    pic: "pepe",     water: 10, light: "밝은 간접광",      temp: "18–26°C", tip: "수박 무늬 잎이 매력. 잎에 물이 닿지 않게 흙에만 주세요.", care: "잎에 물이 닿으면 무르기 쉬워 흙에만 줌. 과습에 약함. 잎이 처지면 물 부족일 수도, 과습일 수도 있으니 흙 상태로 판단." },
+  { id: "wilma",      name: "율마",         latin: "Cupressus macrocarpa",  pic: "cone",     water: 4,  light: "직사광 가까이",    temp: "10–24°C", tip: "물과 해를 가장 많이 찾는 버디. 마르면 회복이 어려워요.", care: "물과 빛을 가장 많이 요구. 한 번 바짝 마르면 갈색으로 변하고 회복이 거의 안 됨(되돌릴 수 없음). 통풍과 햇빛이 필요. 속까지 갈변했다면 회생이 어려움." },
+  { id: "schefflera", name: "홍콩야자",     latin: "Schefflera arboricola", pic: "img_schefflera",  water: 10, light: "밝은 간접광",      temp: "16–28°C", tip: "환경 적응력이 좋아요. 가지치기로 모양을 잡아줄 수 있어요.", care: "적응력이 좋음. 잎을 갑자기 떨구는 건 자리 이동·빛 변화 같은 환경 급변 때문일 때가 많음. 과습이면 잎이 검게, 빛이 부족하면 웃자람." },
+  { id: "etc",        name: "기타 버디",    latin: "My green buddy",        pic: "img_etc",   water: null, light: null,             temp: null,      tip: "AI 상담이나 사진 진단으로 종을 알아내면 자동으로 채워드려요.", care: "아직 종을 모르는 버디. 일반론으로 답하기보다 고객에게 잎 모양·무늬·줄기 특징을 물어 종을 좁힌 뒤, 그 종에 맞춰 답할 것." },
 ];
 const speciesOf = (id) => SPECIES.find((s) => s.id === id) || SPECIES[SPECIES.length - 1];
 const PICS = ["pachira", "monstera", "blades", "zz", "palm", "fern", "trail", "pearls", "pepe", "cone", "sprout"];
@@ -206,9 +206,11 @@ function buddyContext(buddies) {
   return buddies.map((b) => {
     const sp = infoOf(b);
     const w = waterInfo(b);
+    const dplus = daysBetween(b.since, todayKey()); // 함께한 날수(오늘 등록이면 0)
+    const togetherTxt = dplus === 0 ? "오늘 처음 등록함(함께한 지 0일째, 아직 몇 달/몇 주가 지나지 않았음)" : `함께한 지 ${dplus}일째`;
     const lastTxt = w.last ? `${w.sinceLast}일 전(${fmtShort(w.last)})` : "기록 없음";
-    if (isUnknown(b)) return `- ${b.name} (종 미확인 — 고객이 '기타 버디'로 등록함) · 함께한 첫날 ${fmtShort(b.since)} · 마지막 물주기 ${lastTxt}`;
-    return `- ${b.name} (${sp.name}${sp.latin ? ", " + sp.latin : ""}) · 함께한 첫날 ${fmtShort(b.since)} · 권장 물주기 ${sp.water}일 · 마지막 물주기 ${lastTxt} · 빛 ${sp.light} · 적정온도 ${sp.temp} · 메모: ${sp.tip}`;
+    if (isUnknown(b)) return `- ${b.name} (종 미확인 — 고객이 '기타 버디'로 등록함) · ${togetherTxt} · 첫날 ${fmtShort(b.since)} · 마지막 물주기 ${lastTxt}${sp.care ? `\n   └ 참고: ${sp.care}` : ""}`;
+    return `- ${b.name} (${sp.name}${sp.latin ? ", " + sp.latin : ""}) · ${togetherTxt} · 첫날 ${fmtShort(b.since)} · 권장 물주기 ${sp.water}일 · 마지막 물주기 ${lastTxt} · 빛 ${sp.light} · 적정온도 ${sp.temp}${sp.care ? `\n   └ 이 종의 특성(반드시 반영): ${sp.care}` : `\n   └ 메모: ${sp.tip}`}`;
   }).join("\n");
 }
 
@@ -916,13 +918,20 @@ function Ask({ buddies, onSpecies, ping }) {
 ${buddyContext(buddies)}
 
 규칙:
-- 버디 목록의 정보(이름, 종, 마지막 물주기)를 최우선 근거로, 이름을 불러주며 그 버디에 맞게 답하세요.
+- 버디 목록의 정보(이름, 종, 함께한 날수, 마지막 물주기, 종의 특성)를 최우선 근거로, 이름을 불러주며 그 버디에 맞게 답하세요.
+- 같은 증상이라도 종마다 원인과 처방이 다릅니다. 위에 적힌 '이 종의 특성'을 반드시 반영해 종에 맞는 답을 하세요. 예를 들어 잎 끝 마름도 고사리는 습도 부족이 주원인이고, 아레카야자는 수돗물 염분 축적이나 건조가 주원인입니다. 종을 무시한 일반론(모든 식물에 똑같은 답)은 절대 금지합니다.
+- 버디에 '이 종의 특성'이 적혀 있지 않더라도(목록에 없는 종이라도), 그 종 이름에 대한 너의 지식을 활용해 그 식물에 맞는 구체적인 답을 하세요. 종 이름을 알면 일반론으로 답하지 말고 그 종의 실제 특성에 맞춰 답해야 합니다.
+- 날짜·기간은 반드시 위에 적힌 '함께한 날수' 값만 사용하세요. 직접 추측해 "몇 달 됐다"는 식으로 말하지 마세요. 오늘 등록한 버디(0일째)에게 "몇 달/몇 주가 지났다"고 하면 큰 오류입니다.
 - 말투: 고객에게는 정중한 존댓말로, 식물(버디)은 친근하고 귀엽게 대하세요. 단, 식물에게는 높임말을 쓰지 마세요. 식물은 아끼는 반려 대상이지 윗사람이 아닙니다.
 - 식물을 셀 때 "분"이나 "명"을 쓰지 말고 "개"나 "셋·둘"처럼 자연스럽게 세세요. 식물에 "계시다·있으시다" 같은 높임을 쓰지 말고 "있다"로 쓰세요. (예: "버디가 셋 있네요", "파키라는 9일마다 물을 주세요")
 - 답변에 별표(**), 우물정자(#), 밑줄 같은 마크다운 기호를 절대 쓰지 마세요. 강조가 필요하면 그냥 평범한 문장으로 쓰세요. 출력은 일반 텍스트만.
-- 너는 1차 상담사로서, 고객의 질문에 먼저 끝까지 책임지고 구체적으로 답하라. 원인 가능성과 지금 할 수 있는 조치를 충분히 안내하면 대부분의 질문은 여기서 해결된다.
-- 카카오 채널 안내는 '최후의 예외'일 때만 한다. 다음 경우에만 답변 맨 끝에 "더 자세한 진단이 필요하면 파워플랜트 카카오 채널로 문의해 주세요"를 덧붙여라: (1) 고객이 같은 문제로 이미 몇 번 시도했는데도 안 풀린다고 할 때, (2) 식물이 죽어가는 심각한 상태로 보일 때, (3) 병충해·뿌리 문제처럼 사진이나 실물을 직접 봐야 판단 가능한 경우, (4) 고객이 직접 사람 상담을 원할 때. 그 외 일반적인 관리 질문(물주기·빛·분갈이 시기 등)에는 카카오 안내를 붙이지 말고 네가 끝까지 답하라.
-- 매 답변마다 습관적으로 카카오를 권하지 마라. 충분히 답할 수 있는 질문에 카카오로 떠넘기면 고객이 실망한다.
+- 너는 1차 상담사로서, 고객의 질문에 먼저 끝까지 책임지고 구체적으로 답하라. 일반적인 관리 질문(물주기·빛·분갈이·잎 색 변화 등)은 네가 충분히 답해서 해결한다.
+- 답을 충분히 한 뒤, 아래 '연결 신호' 중 하나라도 보이면 답변 맨 끝에 한 문장으로 부드럽게 권하라: "더 정확히 봐드릴 수 있게, 파워플랜트 카카오 채널에서 사진과 함께 1:1로 도와드릴까요?" (딱딱한 '문의하세요'보다 이렇게 제안형으로):
+  (1) 고객이 더 깊이 알고 싶어 하거나 같은 걸 다시 묻는 등 한 번의 답으로 부족해 보일 때
+  (2) 식물이 죽어가거나, 병충해·뿌리 문제처럼 실물·사진을 직접 봐야 정확한 경우
+  (3) 구매·제품 관련 문의일 때(어디서 사는지, 화분·흙 추천, 비슷한 식물 추천 등) — 이건 적극적으로 카카오를 안내하라
+  (4) 고객이 불안해하거나 확신을 원할 때("이게 맞나요?", "괜찮을까요?"가 반복될 때)
+- 위 신호가 없는 단순·명확한 질문에는 카카오를 권하지 말고 네 답으로 마무리하라. 매 답변마다 습관적으로 권하지는 말되, 신호가 보이면 주저 말고 자연스럽게 연결하라. 균형이 중요하다.
 - 따뜻하고 쉬운 한국어로 2~5문장. 이모지·과장 금지. 필요하면 오늘 기준 며칠 됐는지 계산해 알려주세요.
 - 물주기 주기를 안내할 땐, 권장 주기는 어디까지나 기준일 뿐이며 키우는 환경(온도·습도·빛)에 따라 달라지니 "흙 표면이 말랐는지 직접 확인하고 주는 것이 가장 정확하다"고 꼭 덧붙이세요.
 - 식물 이름을 모를 땐 아무 이름이나 단정하지 말고 "흔치 않은 종 같아요" 또는 "○○ 계열로 보여요"처럼 솔직하게 말하세요. 틀린 단정보다 정직한 추정이 신뢰를 줍니다.
@@ -964,9 +973,19 @@ ${buddyContext(buddies)}
               : "안녕하세요, 파워플랜트 케어 상담사예요. 버디를 등록하면 그 친구에 딱 맞는 답을 드릴 수 있어요."}
           </p>
           {!msgs.length && (
-            <div className="chips wrap">
-              {(buddies.some(isUnknown) ? [`${buddies.find(isUnknown).name}가 어떤 식물인지 알려줘`, ...ASK_SUGGEST] : ASK_SUGGEST).map((s) => <button key={s} className="chip" onClick={() => send(s)}>{s}</button>)}
-            </div>
+            buddies.length ? (
+              <div className="chips wrap">
+                {buddies.map((b) => (
+                  <button key={b.id} className="chip buddychip" onClick={() => send(isUnknown(b) ? `${b.name}가 어떤 식물인지 알려줘` : `${b.name} 어떻게 돌봐야 해?`)}>
+                    <Pictogram type={infoOf(b).pic} size={20} /> {b.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="chips wrap">
+                {ASK_SUGGEST.map((s) => <button key={s} className="chip" onClick={() => send(s)}>{s}</button>)}
+              </div>
+            )
           )}
         </div>
         {msgs.map((m, i) => (
@@ -1284,6 +1303,7 @@ input{font:inherit;color:var(--ink)}
 .chips.wrap{flex-wrap:wrap;overflow:visible}
 .chip{flex-shrink:0;border:1.5px solid var(--ink);border-radius:999px;padding:8px 14px;font-size:13px;background:var(--paper)}
 .chip.dice{border-style:dashed;font-weight:700}
+.chip.buddychip{display:inline-flex;align-items:center;gap:6px;font-weight:700}
 .chip.dice:disabled{opacity:.5}
 .chip.on{background:var(--ink);color:#fff;font-weight:700}
 .sticker{display:inline-block;border:1.7px solid var(--ink);border-radius:999px;padding:5px 14px;font-weight:800;font-size:15px;background:var(--paper);box-shadow:2px 2px 0 var(--ink)}
