@@ -225,6 +225,21 @@ function saveState(state) {
   try { localStorage.setItem("pp-care-state-v3", JSON.stringify(state)); } catch (e) {}
 }
 
+/* ─── 하루 AI 상담 횟수 제한 (악용·폭주 방지) ──── */
+const AI_DAILY_LIMIT = 30;
+const _aicMem = {};
+const _aicKey = () => "ppc_aic_" + todayKey();
+function getAICount() {
+  const k = _aicKey();
+  try { const v = localStorage.getItem(k); return v ? (parseInt(v, 10) || 0) : 0; }
+  catch (e) { return _aicMem[k] || 0; }
+}
+function bumpAICount() {
+  const k = _aicKey();
+  try { localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || "0", 10) || 0) + 1)); }
+  catch (e) { _aicMem[k] = (_aicMem[k] || 0) + 1; }
+}
+
 /* ─── Claude API (배포판: /api/chat 프록시 경유, 키는 서버에만) ──── */
 async function askClaude({ system, messages, maxTokens = 1000 }) {
   let lastErr = null;
@@ -982,9 +997,19 @@ function Ask({ buddies, onSpecies, ping, seed, onSeedUsed }) {
   const send = async (text) => {
     const t = (text || input).trim();
     if (!t || busy) return;
+    // 하루 상담 횟수 제한 (악용·폭주 방지)
+    if (getAICount() >= AI_DAILY_LIMIT) {
+      setInput("");
+      setMsgs((p) => [...p,
+        { role: "user", content: t },
+        { role: "assistant", content: "오늘 버디들과 이야기를 많이 나눴네요! 🌱 오늘은 여기까지 쉬어가고, 내일 다시 도와드릴게요. 더 급한 문의는 파워플랜트 카카오 채널로 연락 주세요." },
+      ]);
+      return;
+    }
     setInput("");
     const next = [...msgs, { role: "user", content: t }];
     setMsgs(next); setBusy(true);
+    bumpAICount();
     try {
       const system = `당신은 식물 브랜드 '파워플랜트(POWERPLANT)'의 식물 케어 상담사입니다. 파워플랜트는 식물을 '버디(buddy)'라고 부릅니다.
 
@@ -992,6 +1017,9 @@ function Ask({ buddies, onSpecies, ping, seed, onSeedUsed }) {
 ${buddyContext(buddies)}
 
 규칙:
+- 너의 역할은 '식물 상담'이다. 식물, 식물 돌봄, 식물과 관련된 생활(반려동물·아이에게 안전한 식물, 식물 선물, 공간·인테리어 속 식물 배치, 화분·흙·도구 등)에 대한 질문이면 폭넓게 친절히 답하라.
+- 식물과 완전히 무관한 질문(날씨·뉴스·주식·수학·코딩·잡담 등)에는 길게 답하지 말고, 친근하게 본래 역할로 안내하라. 매번 똑같은 문장으로 거절하지 말고 자연스럽게, 가능하면 가볍게 식물 쪽으로 유도하라. (예: "그건 제가 잘 모르지만, 저는 OO님 식물 상담을 도와드리는 버디예요. 식물에 대해 궁금한 게 있으면 언제든 말씀해 주세요!")
+- 욕설·부적절하거나 식물과 무관한 무리한 요청에는 응하지 말고, 식물 상담만 도와드린다고 정중히 선을 그어라.
 - 버디 목록의 정보(이름, 종, 함께한 날수, 마지막 물주기, 종의 특성)를 최우선 근거로, 이름을 불러주며 그 버디에 맞게 답하세요.
 - 같은 증상이라도 종마다 원인과 처방이 다릅니다. 위에 적힌 '이 종의 특성'을 반드시 반영해 종에 맞는 답을 하세요. 예를 들어 잎 끝 마름도 고사리는 습도 부족이 주원인이고, 아레카야자는 수돗물 염분 축적이나 건조가 주원인입니다. 종을 무시한 일반론(모든 식물에 똑같은 답)은 절대 금지합니다.
 - 버디에 '이 종의 특성'이 적혀 있지 않더라도(목록에 없는 종이라도), 그 종 이름에 대한 너의 지식을 활용해 그 식물에 맞는 구체적인 답을 하세요. 종 이름을 알면 일반론으로 답하지 말고 그 종의 실제 특성에 맞춰 답해야 합니다.
