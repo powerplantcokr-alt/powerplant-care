@@ -225,6 +225,26 @@ function saveState(state) {
   try { localStorage.setItem("pp-care-state-v3", JSON.stringify(state)); } catch (e) {}
 }
 
+/* ─── 유입 출처 기록 (마케팅 분석용) ──── */
+// 고객이 처음 들어온 출처(?from=)를 기억한다. 한 번 저장되면 덮어쓰지 않아 '최초 유입 경로'가 보존된다.
+function captureSource() {
+  const KEY = "ppc_src";
+  const map = { qr: "QR", ohou: "오늘의집", insta: "인스타" };
+  let stored = null;
+  try { stored = localStorage.getItem(KEY); } catch (e) { stored = _aicMem[KEY] || null; }
+  let from = null;
+  try { from = new URLSearchParams(window.location.search).get("from"); } catch (e) {}
+  if (from && !stored) {
+    const label = map[from] || from;
+    try { localStorage.setItem(KEY, label); } catch (e) { _aicMem[KEY] = label; }
+    return label;
+  }
+  if (stored) return stored;
+  // 꼬리표도 없고 저장된 것도 없으면 직접 유입으로 기록
+  try { localStorage.setItem(KEY, "직접"); } catch (e) { _aicMem[KEY] = "직접"; }
+  return "직접";
+}
+
 /* ─── 하루 AI 상담 횟수 제한 (악용·폭주 방지) ──── */
 const AI_DAILY_LIMIT = 30;
 const _aicMem = {};
@@ -516,6 +536,7 @@ export default function PowerplantCare() {
 
   /* load / save */
   useEffect(() => { (async () => {
+    captureSource(); // 최초 유입 출처 기록 (URL ?from= → localStorage)
     const st = await loadState();
     if (st && Array.isArray(st.buddies)) setBuddies(st.buddies);
     if (st && st.nudgeOff) setNudgeOff(true);
@@ -610,7 +631,7 @@ export default function PowerplantCare() {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ ...s, buddiesDetail: buddies.map((b) => ({ name: b.name, species: infoOf(b).name, waterDays: infoOf(b).water, lastWater: b.waterLog[b.waterLog.length - 1] || null, waterDates: [...b.waterLog].sort() })) }),
+            body: JSON.stringify({ ...s, source: captureSource(), buddiesDetail: buddies.map((b) => ({ name: b.name, species: infoOf(b).name, waterDays: infoOf(b).water, lastWater: b.waterLog[b.waterLog.length - 1] || null, waterDates: [...b.waterLog].sort() })) }),
           }).catch(() => {});
         }} onCancelSub={() => { setSub(null); ping("알림 신청을 해지했어요"); }} />}
       {toast && <div className="toast"><span className="toastdot" />{toast}</div>}
@@ -941,6 +962,11 @@ function NotifyModal({ mode, buddies, sub, onClose, onSave, onCancelSub }) {
             ? `${name}의 물 줄 날 아침, 카카오톡으로 콕 알려드릴게요. 발송이 시작되는 대로 이 번호로 가장 먼저 보내드려요.`
             : `휴대폰 번호가 ${name} 기록의 열쇠가 돼요. 보관 기능이 열리면 폰이 바뀌어도 이 번호로 기록을 그대로 이어드릴게요.`}
         </p>
+        <ul className="perks">
+          <li><span className="perk-i">💧</span><span><b>물 줄 때를 놓치지 않게</b><i>{name}가 목마를 때쯤 카톡으로 살짝 알려드려요</i></span></li>
+          <li><span className="perk-i">🌱</span><span><b>기록이 사라지지 않게</b><i>폰이 바뀌어도 버디와 쌓은 기록을 그대로</i></span></li>
+          <li><span className="perk-i">🎁</span><span><b>새 소식을 가장 먼저</b><i>신상 식물·혜택 소식을 먼저 받아보세요</i></span></li>
+        </ul>
         <input className="search" type="tel" inputMode="numeric" placeholder="휴대폰 번호 (010-0000-0000)" value={phone} onChange={(e) => setPhone(fmtPhone(e.target.value))} />
         <label className="agree">
           <input type="checkbox" checked={agree1} onChange={(e) => setAgree1(e.target.checked)} />
@@ -1565,6 +1591,11 @@ input{font:inherit;color:var(--ink)}
 .kmodal{display:flex;flex-direction:column;gap:10px;padding-bottom:30px}
 .kmodal-t{font-size:18px;margin-top:2px}
 .kmodal-p{font-size:13.5px;line-height:1.75}
+.perks{list-style:none;padding:0;margin:14px 0 4px;display:flex;flex-direction:column;gap:10px}
+.perks li{display:flex;align-items:flex-start;gap:10px}
+.perks .perk-i{font-size:18px;line-height:1.3;flex-shrink:0}
+.perks li b{display:block;font-size:13.5px;font-weight:700}
+.perks li i{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:1px;line-height:1.5}
 .agree{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.55;cursor:pointer}
 .agree input{appearance:none;-webkit-appearance:none;flex-shrink:0;width:18px;height:18px;border:1.5px solid var(--ink);border-radius:5px;margin-top:1px;display:grid;place-items:center;cursor:pointer;background:var(--paper)}
 .agree input:checked{background:var(--ink)}
