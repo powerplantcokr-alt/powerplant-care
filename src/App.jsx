@@ -530,6 +530,7 @@ export default function PowerplantCare() {
   const [sheet, setSheet] = useState(null);        // buddy id
   const [askSeed, setAskSeed] = useState(null);    // AI 상담을 시작할 버디 id (상세→상담 이동용)
   const [chBanner, setChBanner] = useState(null);  // 채널별 환영 배너 (박스동봉/제품상세/SNS)
+  const [boxScanned, setBoxScanned] = useState(false); // 박스 QR 스캔 이력 (홈 리뷰이벤트 카드 노출 판정용)
   const [toast, setToast] = useState(null);
   const [notify, setNotify] = useState(null);      // null | "alarm" | "backup"
   const [sub, setSub] = useState(null);            // 알림 사전 신청 정보 {phone, marketing, ...}
@@ -538,11 +539,24 @@ export default function PowerplantCare() {
 
   /* load / save */
   useEffect(() => { (async () => {
-    const src = captureSource(); // 최초 유입 출처 기록 (URL ?from= → localStorage)
-    // 채널별 환영 배너: 인식된 채널이고 아직 안 본 경우 1회 노출
-    let bseen = false;
-    try { bseen = !!localStorage.getItem("ppc_chbanner_seen"); } catch (e) {}
-    if (!bseen && (src === "박스동봉" || src === "제품상세" || src === "SNS")) setChBanner(src);
+    captureSource(); // 최초 유입 출처(ppc_src) 기록 — 마케팅 분석용, 첫 값 유지(덮어쓰지 않음)
+    // '지금 이 접속'의 ?from= 으로 채널 판정 (최초 유입 잠금과 분리)
+    let fromNow = null;
+    try { fromNow = new URLSearchParams(window.location.search).get("from"); } catch (e) {}
+    // 박스 QR을 한 번이라도 스캔했으면 기록 → 홈 리뷰이벤트 카드 노출 (몇 번째 유입이든 무관)
+    if (fromNow === "box") { try { localStorage.setItem("ppc_box_scanned", "1"); } catch (e) {} }
+    try { setBoxScanned(!!localStorage.getItem("ppc_box_scanned")); } catch (e) {}
+    // 채널 환영 팝업: 이번에 스캔한 채널을, 채널별로 딱 한 번만 노출 (노출 즉시 '본 것'으로 기록)
+    const CHMAP = { box: "박스동봉", detail: "제품상세", sns: "SNS" };
+    const chNow = CHMAP[fromNow] || null;
+    if (chNow) {
+      let seen = false;
+      try { seen = !!localStorage.getItem("ppc_chbanner_seen_" + fromNow); } catch (e) {}
+      if (!seen) {
+        setChBanner(chNow);
+        try { localStorage.setItem("ppc_chbanner_seen_" + fromNow, "1"); } catch (e) {}
+      }
+    }
     const st = await loadState();
     if (st && Array.isArray(st.buddies)) setBuddies(st.buddies);
     if (st && st.nudgeOff) setNudgeOff(true);
@@ -554,7 +568,7 @@ export default function PowerplantCare() {
   useEffect(() => { if (loaded) saveState({ buddies, nudgeOff, nudgeSeen, sub }); }, [buddies, nudgeOff, nudgeSeen, sub, loaded]);
 
   const ping = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
-  const closeChBanner = () => { setChBanner(null); try { localStorage.setItem("ppc_chbanner_seen", "1"); } catch (e) {} };
+  const closeChBanner = () => { setChBanner(null); }; // 노출 시점에 이미 '본 것'으로 기록되므로 닫기만 처리
   const openInsta = () => { try { window.open(INSTA_URL, "_blank", "noopener"); } catch (e) {} };
 
   /* actions */
@@ -627,7 +641,7 @@ export default function PowerplantCare() {
           <Header onHome={() => setTab("home")} />
           <main className="scroll">
             {tab === "home" && chBanner && <ChannelBanner channel={chBanner} onClose={closeChBanner} onRegister={() => setReg({ step: 1 })} onInsta={openInsta} />}
-            {tab === "home"  && <Home buddies={buddies} onAdd={() => setReg({ step: 1 })} onOpen={setSheet} onWater={waterToday} onFind={goCheck} nudge={showNudge} onBackup={() => setNotify("backup")} onNudgeClose={() => setNudgeOff(true)} />}
+            {tab === "home"  && <Home buddies={buddies} onAdd={() => setReg({ step: 1 })} onOpen={setSheet} onWater={waterToday} onFind={goCheck} nudge={showNudge} onBackup={() => setNotify("backup")} onNudgeClose={() => setNudgeOff(true)} boxSource={boxScanned} onInsta={openInsta} />}
             {tab === "ask"   && <Ask buddies={buddies} onSpecies={applySpecies} ping={ping} seed={askSeed} onSeedUsed={() => setAskSeed(null)} />}
             {tab === "check" && <Check buddies={buddies} onSpecies={applySpecies} ping={ping} />}
             {tab === "water" && <Water buddies={buddies} onToggle={toggleLog} onWater={waterToday} onAlarm={() => setNotify("alarm")} sub={sub} />}
@@ -785,8 +799,13 @@ function ChannelBanner({ channel, onClose, onRegister, onInsta }) {
     return (
       <div className="chbanner">
         <button className="chbanner-x iconbtn" onClick={onClose} aria-label="닫기">{I.x()}</button>
-        <b className="chbanner-t">함께해 주셔서 고마워요 🌱</b>
-        <p className="chbanner-p">받으신 식물을 버디로 등록하고 돌봄을 시작해보세요. <b>@powerplant.co</b> 태그로 반려식물 사진을 올려주시면, 매달 베스트 리뷰어 두 분께 신상품을 보내드려요!</p>
+        <b className="chbanner-t">파워플랜트의 버디를 선택해 주셔서 감사합니다 🌱</b>
+        <p className="chbanner-p">받으신 식물을 버디로 등록하고 돌봄을 시작해보세요.</p>
+        <div className="chbanner-event">
+          <span className="chbanner-evtag">리뷰이벤트</span>
+          <p className="chbanner-hl">새로 들인 버디를 인스타그램에서 자랑해보세요!</p>
+          <p className="chbanner-p"><b>@powerplant.co</b> 태그로 버디 모습을 올려주시면, 매달 베스트 리뷰어 두 분께 식물을 보내드려요.</p>
+        </div>
         <div className="chbanner-btns">
           <button className="btn-ink grow" onClick={reg}>버디 등록하기</button>
           <button className="btn-line" onClick={onInsta}>📸 인스타 보러가기</button>
@@ -821,7 +840,7 @@ function ChannelBanner({ channel, onClose, onRegister, onInsta }) {
 }
 
 /* ─── home ──────────────────────────────────────────────────────── */
-function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudgeClose }) {
+function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudgeClose, boxSource, onInsta }) {
   return (
     <div className="page">
       <img className="home-banner" src={HERO} alt="POWERPLANT — ready to grow" />
@@ -873,6 +892,14 @@ function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudg
         );
       })}
 
+      {boxSource && (
+        <div className="evcard">
+          <span className="ev-badge">리뷰이벤트</span>
+          <p className="ev-hl">내 버디를 인스타그램에 자랑해보세요</p>
+          <p className="ev-sub"><b>@powerplant.co</b> 태그로 올려주시면, 매달 베스트 리뷰어 두 분께 식물을 보내드려요.</p>
+          <button className="ev-cta" onClick={onInsta}>📸 인스타에서 자랑하기 →</button>
+        </div>
+      )}
       <button className="addcard" onClick={onAdd}>{I.plus()} 버디 등록하기</button>
       <div className="page-foot">Plant Creative Crew · 37.7207971, 126.8492043</div>
     </div>
@@ -1647,12 +1674,20 @@ input{font:inherit;color:var(--ink)}
 .chbanner-p{font-size:13px;line-height:1.7;color:#3a3a3a;margin:0}
 .chbanner-p b{font-weight:700}
 .chbanner-btns{display:flex;gap:8px;margin-top:4px}
+.chbanner-event{border-top:1px dashed #d4d0c6;padding-top:11px;margin-top:3px;display:flex;flex-direction:column;gap:6px}
+.chbanner-evtag{align-self:flex-start;background:var(--ink);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.04em;padding:3px 10px;border-radius:999px}
+.chbanner-hl{font-size:13.5px;font-weight:700;color:var(--ink);margin:0;line-height:1.5}
 .chbanner-btns .btn-ink{margin:0;padding:12px;font-size:14px}
 .chbanner-btns .btn-line{flex-shrink:0;white-space:nowrap;background:var(--paper)}
 .welcome-banner{padding:14px 18px 0}
 .nudge-x{position:absolute;top:8px;right:8px}
 .nudge-t{font-size:13.5px;line-height:1.6}
 .nudge-cta{align-self:flex-start;font-size:13px;font-weight:800;border-bottom:2px solid var(--leaf);padding-bottom:1px}
+.evcard{position:relative;border:1.5px solid var(--ink);border-radius:16px;padding:15px;margin:12px 0;display:flex;flex-direction:column;gap:7px;background:var(--paper)}
+.ev-badge{align-self:flex-start;background:var(--ink);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.04em;padding:3px 10px;border-radius:999px}
+.ev-hl{font-size:14px;font-weight:800;color:var(--ink);margin:0;line-height:1.4}
+.ev-sub{font-size:12.5px;line-height:1.65;color:#6b6b6b;margin:0}
+.ev-cta{align-self:flex-start;font-size:13px;font-weight:800;color:var(--ink);border-bottom:2px solid var(--ink);padding-bottom:1px;margin-top:2px}
 .kmodal{display:flex;flex-direction:column;gap:10px;padding-bottom:30px}
 .kmodal-t{font-size:18px;margin-top:2px}
 .kmodal-p{font-size:13.5px;line-height:1.75}
