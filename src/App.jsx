@@ -36,6 +36,7 @@ const PIC_IMG = {
 // 이 URL을 채우기 전까지는 신청 번호가 고객 폰에만 저장되니, QR 카드 배포 전에 꼭 채워주세요.
 const SUBSCRIBE_WEBHOOK = "https://script.google.com/macros/s/AKfycbxWxQouBrpevkZMxRDPR1kGr_xm95nq73uv6DAd18lxiClLyb9y4xHNbY0YFgIvpIwfdw/exec";
 const KAKAO_CHAT = "http://pf.kakao.com/_lIxiVj/chat"; // 파워플랜트 1:1 상담 채팅
+const INSTA_URL = "https://instagram.com/powerplant.co"; // 파워플랜트 인스타
 
 // 카카오 상담으로 넘어갈 때, 상담 맥락을 요약해 클립보드에 복사한다.
 // origin: "ai" | "check"  /  extra: 마지막 질문 또는 진단 결과 텍스트
@@ -528,6 +529,7 @@ export default function PowerplantCare() {
   const [reg, setReg] = useState(null);            // null | {step, speciesId, name, since}
   const [sheet, setSheet] = useState(null);        // buddy id
   const [askSeed, setAskSeed] = useState(null);    // AI 상담을 시작할 버디 id (상세→상담 이동용)
+  const [chBanner, setChBanner] = useState(null);  // 채널별 환영 배너 (박스동봉/제품상세/SNS)
   const [toast, setToast] = useState(null);
   const [notify, setNotify] = useState(null);      // null | "alarm" | "backup"
   const [sub, setSub] = useState(null);            // 알림 사전 신청 정보 {phone, marketing, ...}
@@ -536,7 +538,11 @@ export default function PowerplantCare() {
 
   /* load / save */
   useEffect(() => { (async () => {
-    captureSource(); // 최초 유입 출처 기록 (URL ?from= → localStorage)
+    const src = captureSource(); // 최초 유입 출처 기록 (URL ?from= → localStorage)
+    // 채널별 환영 배너: 인식된 채널이고 아직 안 본 경우 1회 노출
+    let bseen = false;
+    try { bseen = !!localStorage.getItem("ppc_chbanner_seen"); } catch (e) {}
+    if (!bseen && (src === "박스동봉" || src === "제품상세" || src === "SNS")) setChBanner(src);
     const st = await loadState();
     if (st && Array.isArray(st.buddies)) setBuddies(st.buddies);
     if (st && st.nudgeOff) setNudgeOff(true);
@@ -548,6 +554,8 @@ export default function PowerplantCare() {
   useEffect(() => { if (loaded) saveState({ buddies, nudgeOff, nudgeSeen, sub }); }, [buddies, nudgeOff, nudgeSeen, sub, loaded]);
 
   const ping = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
+  const closeChBanner = () => { setChBanner(null); try { localStorage.setItem("ppc_chbanner_seen", "1"); } catch (e) {} };
+  const openInsta = () => { try { window.open(INSTA_URL, "_blank", "noopener"); } catch (e) {} };
 
   /* actions */
   const addBuddy = (speciesId, name, since) => {
@@ -607,12 +615,18 @@ export default function PowerplantCare() {
 
   return (
     <Frame>
-      {view === "welcome" && <Welcome onStart={() => setReg({ step: 1 })} onSkip={() => setView("app")} />}
+      {view === "welcome" && (
+        <>
+          {chBanner && <div className="welcome-banner"><ChannelBanner channel={chBanner} onClose={closeChBanner} onRegister={() => setReg({ step: 1 })} onInsta={openInsta} /></div>}
+          <Welcome onStart={() => setReg({ step: 1 })} onSkip={() => setView("app")} />
+        </>
+      )}
 
       {view === "app" && (
         <>
           <Header onHome={() => setTab("home")} />
           <main className="scroll">
+            {tab === "home" && chBanner && <ChannelBanner channel={chBanner} onClose={closeChBanner} onRegister={() => setReg({ step: 1 })} onInsta={openInsta} />}
             {tab === "home"  && <Home buddies={buddies} onAdd={() => setReg({ step: 1 })} onOpen={setSheet} onWater={waterToday} onFind={goCheck} nudge={showNudge} onBackup={() => setNotify("backup")} onNudgeClose={() => setNudgeOff(true)} />}
             {tab === "ask"   && <Ask buddies={buddies} onSpecies={applySpecies} ping={ping} seed={askSeed} onSeedUsed={() => setAskSeed(null)} />}
             {tab === "check" && <Check buddies={buddies} onSpecies={applySpecies} ping={ping} />}
@@ -760,6 +774,48 @@ function Register({ reg, setReg, onDone, onClose }) {
           <p className="micro center">{reg.speciesId === "etc" ? "지금은 종을 몰라도 괜찮아요. AI 상담이나 사진 진단에서 종을 알아내면 이름표를 자동으로 채워드려요." : "이름을 비워두면 식물 이름이 그대로 버디 이름이 돼요. 등록하면 오늘을 첫 물주기로 기록해 둘게요."}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── 채널별 환영 배너 ──────────────────────────────────────────── */
+function ChannelBanner({ channel, onClose, onRegister, onInsta }) {
+  const reg = () => { onClose(); onRegister(); };
+  if (channel === "박스동봉") {
+    return (
+      <div className="chbanner">
+        <button className="chbanner-x iconbtn" onClick={onClose} aria-label="닫기">{I.x()}</button>
+        <b className="chbanner-t">함께해 주셔서 고마워요 🌱</b>
+        <p className="chbanner-p">받으신 식물을 버디로 등록하고 돌봄을 시작해보세요. <b>@powerplant.co</b> 태그로 반려식물 사진을 올려주시면, 매달 베스트 리뷰어 두 분께 신상품을 보내드려요!</p>
+        <div className="chbanner-btns">
+          <button className="btn-ink grow" onClick={reg}>버디 등록하기</button>
+          <button className="btn-line" onClick={onInsta}>📸 인스타 보러가기</button>
+        </div>
+      </div>
+    );
+  }
+  if (channel === "제품상세") {
+    return (
+      <div className="chbanner">
+        <button className="chbanner-x iconbtn" onClick={onClose} aria-label="닫기">{I.x()}</button>
+        <b className="chbanner-t">구매 전에 미리 둘러보세요 👀</b>
+        <p className="chbanner-p">식물을 들이면 이 앱이 물주기·관리를 도와드려요. 키우는 식물이 있다면 지금 버디로 등록해 체험해보세요.</p>
+        <div className="chbanner-btns">
+          <button className="btn-ink grow" onClick={reg}>버디 등록해보기</button>
+        </div>
+      </div>
+    );
+  }
+  // SNS
+  return (
+    <div className="chbanner">
+      <button className="chbanner-x iconbtn" onClick={onClose} aria-label="닫기">{I.x()}</button>
+      <b className="chbanner-t">인스타에서 오셨네요, 반가워요! 🌿</b>
+      <p className="chbanner-p">키우는 식물이 있다면 버디로 등록해보세요. 물주기 알림부터 AI 상담까지 도와드려요.</p>
+      <div className="chbanner-btns">
+        <button className="btn-ink grow" onClick={reg}>버디 등록하기</button>
+        <button className="btn-line" onClick={onInsta}>📸 인스타 보러가기</button>
+      </div>
     </div>
   );
 }
@@ -1585,6 +1641,15 @@ input{font:inherit;color:var(--ink)}
 .due.find{cursor:pointer}
 /* nudge + kakao */
 .nudge{position:relative;border:1.5px solid var(--ink);border-radius:16px;padding:14px 40px 14px 15px;margin:2px 0 14px;display:flex;flex-direction:column;gap:6px;background:var(--paper)}
+.chbanner{position:relative;border:1.5px solid var(--ink);border-radius:16px;padding:16px 16px 16px;margin:2px 0 14px;display:flex;flex-direction:column;gap:8px;background:#f6f5f1}
+.chbanner-x{position:absolute;top:8px;right:8px}
+.chbanner-t{font-size:15.5px;font-weight:800;padding-right:24px}
+.chbanner-p{font-size:13px;line-height:1.7;color:#3a3a3a;margin:0}
+.chbanner-p b{font-weight:700}
+.chbanner-btns{display:flex;gap:8px;margin-top:4px}
+.chbanner-btns .btn-ink{margin:0;padding:12px;font-size:14px}
+.chbanner-btns .btn-line{flex-shrink:0;white-space:nowrap;background:var(--paper)}
+.welcome-banner{padding:14px 18px 0}
 .nudge-x{position:absolute;top:8px;right:8px}
 .nudge-t{font-size:13.5px;line-height:1.6}
 .nudge-cta{align-self:flex-start;font-size:13px;font-weight:800;border-bottom:2px solid var(--leaf);padding-bottom:1px}
