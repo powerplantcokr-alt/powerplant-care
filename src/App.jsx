@@ -229,7 +229,7 @@ function saveState(state) {
 // 고객이 처음 들어온 출처(?from=)를 기억한다. 한 번 저장되면 덮어쓰지 않아 '최초 유입 경로'가 보존된다.
 function captureSource() {
   const KEY = "ppc_src";
-  const map = { qr: "QR", ohou: "오늘의집", insta: "인스타" };
+  const map = { detail: "제품상세", box: "박스동봉", sns: "SNS" };
   let stored = null;
   try { stored = localStorage.getItem(KEY); } catch (e) { stored = _aicMem[KEY] || null; }
   let from = null;
