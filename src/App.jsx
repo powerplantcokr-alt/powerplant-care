@@ -799,14 +799,19 @@ function Register({ reg, setReg, onDone, onClose }) {
 
 /* ─── 파손·불량 신고 (박스 고객) ─────────────────────────────────── */
 function Claim({ onClose, ping }) {
+  const DTYPES = ["화분 파손", "식물 손상", "배송 중 문제", "기타"];
   const STORES = ["파워플랜트 자사몰", "오늘의집", "카카오선물하기", "W컨셉", "EQL"];
+  const [dtype, setDtype] = useState("");
   const [store, setStore] = useState("");
+  const [orderNo, setOrderNo] = useState("");
   const [name, setName] = useState("");
-  const ready = !!store && !!name.trim();
+  const ready = !!dtype && !!store && !!name.trim();
   const summary =
     "🛠 [파워플랜트 파손·불량 신고]\n" +
     "─────────────\n" +
+    "파손 유형: " + (dtype || "(미선택)") + "\n" +
     "구매처: " + (store || "(미선택)") + "\n" +
+    "주문번호: " + (orderNo.trim() || "(미입력)") + "\n" +
     "수취인: " + (name.trim() || "(미입력)") + "\n" +
     "─────────────\n" +
     "※ 파손 부위가 보이는 사진을 함께 보내드립니다.\n" +
@@ -823,12 +828,22 @@ function Claim({ onClose, ping }) {
           <p>소중한 버디가 안전하지 않게 도착해 정말 죄송합니다. 아래 간단한 정보만 남겨주시면, 빠르게 확인하여 처리해 드리겠습니다.</p>
         </div>
 
+        <label className="lbl">파손 유형</label>
+        <div className="chips wrap">
+          {DTYPES.map((d) => (
+            <button key={d} className={"chip" + (dtype === d ? " on" : "")} onClick={() => setDtype(d)}>{d}</button>
+          ))}
+        </div>
+
         <label className="lbl">구매처</label>
         <div className="chips wrap">
           {STORES.map((s) => (
             <button key={s} className={"chip" + (store === s ? " on" : "")} onClick={() => setStore(s)}>{s}</button>
           ))}
         </div>
+
+        <label className="lbl">주문번호 <span className="lbl-opt">선택</span></label>
+        <input className="search" placeholder="주문번호를 입력해 주세요" value={orderNo} maxLength={40} onChange={(e) => setOrderNo(e.target.value)} />
 
         <label className="lbl">수취인명</label>
         <input className="search" placeholder="받으신 분의 성함을 입력해 주세요" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} />
@@ -843,7 +858,7 @@ function Claim({ onClose, ping }) {
 
         {ready
           ? <a className="btn-ink claim-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer" onClick={() => copyKakaoSummary(summary, ping)}>카카오톡 1:1 상담 열고 사진 보내기</a>
-          : <button className="btn-ink claim-cta disabled" disabled>구매처와 수취인명을 입력해 주세요</button>}
+          : <button className="btn-ink claim-cta disabled" disabled>파손 유형·구매처·수취인명을 입력해 주세요</button>}
         <p className="micro center">입력하신 정보는 자동으로 복사됩니다.<br />상담창에서 길게 눌러 붙여넣어 주세요.</p>
       </div>
     </div>
@@ -1589,6 +1604,7 @@ input{font:inherit;color:var(--ink)}
 .claim-entry{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--paper);margin-top:10px;font-size:13px;color:var(--muted)}
 .claim-entry b{color:var(--ink);font-weight:700}
 .claim-arrow{color:var(--muted);font-size:15px}
+.lbl-opt{color:#b8b8b8;font-weight:400;letter-spacing:normal;margin-left:2px}
 .chip.dice{border-style:dashed;font-weight:700}
 .chip.buddychip{display:inline-flex;align-items:center;gap:6px;font-weight:700}
 .chip.dice:disabled{opacity:.5}
