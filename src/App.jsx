@@ -633,7 +633,7 @@ export default function PowerplantCare() {
       {view === "welcome" && (
         <>
           {chBanner && <div className="welcome-banner"><ChannelBanner channel={chBanner} onClose={closeChBanner} onRegister={() => setReg({ step: 1 })} onInsta={openInsta} /></div>}
-          <Welcome onStart={() => setReg({ step: 1 })} onSkip={() => setView("app")} />
+          <Welcome onStart={() => setReg({ step: 1 })} onSkip={() => setView("app")} boxScanned={boxScanned} onClaim={() => setClaim(true)} />
         </>
       )}
 
@@ -701,7 +701,7 @@ function TabBar({ tab, setTab }) {
 }
 
 /* ─── welcome ───────────────────────────────────────────────────── */
-function Welcome({ onStart, onSkip }) {
+function Welcome({ onStart, onSkip, boxScanned, onClaim }) {
   return (
     <div className="welcome scroll">
       <img className="w-banner" src={HERO} alt="POWERPLANT — ready to grow" />
@@ -712,6 +712,9 @@ function Welcome({ onStart, onSkip }) {
           여기서 함께 자라드릴게요.
         </p>
         <button className="btn-ink w-cta" onClick={onStart}>버디 등록하기</button>
+        {boxScanned && (
+          <button className="w-claim" onClick={onClaim}>버디가 다치거나 파손되어 왔나요? 1:1 문의</button>
+        )}
         <button className="w-skip" onClick={onSkip}>먼저 둘러볼게요</button>
         <div className="w-foot">life like GREENERY · @powerplant.co</div>
       </div>
@@ -1552,6 +1555,7 @@ input{font:inherit;color:var(--ink)}
 .w-body{padding:26px 24px 32px;display:flex;flex-direction:column;flex:1}
 .w-sub{font-size:14.5px;line-height:1.78;color:var(--ink);margin-bottom:24px}
 .w-cta{width:100%}
+.w-claim{width:100%;display:flex;align-items:center;justify-content:center;text-align:center;border:1.5px solid var(--ink);color:var(--ink);background:var(--paper);font-weight:700;font-size:14px;padding:15px;border-radius:999px;margin-top:10px;line-height:1.4}
 .w-skip{margin:14px auto 0;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 .w-foot{margin-top:auto;padding-top:34px;font-size:10.5px;letter-spacing:.12em;color:var(--muted)}
 
