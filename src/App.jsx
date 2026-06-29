@@ -146,8 +146,10 @@ const todayKey = () => toKey(new Date());
 const fromKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
 const daysBetween = (a, b) => Math.round((fromKey(b) - fromKey(a)) / 86400000);
 const keyMinus = (k, n) => { const d = fromKey(k); d.setDate(d.getDate() - n); return toKey(d); };
+const keyPlus = (k, n) => { const d = fromKey(k); d.setDate(d.getDate() + n); return toKey(d); };
 const fmtShort = (k) => { const d = fromKey(k); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
 const wa = (s) => { const c = s.charCodeAt(s.length - 1); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0 ? "과" : "와"; };
+const ro = (s) => { const c = s.charCodeAt(s.length - 1); const b = c >= 0xac00 && c <= 0xd7a3 ? (c - 0xac00) % 28 : 0; return (b === 0 || b === 8) ? "로" : "으로"; };
 
 function waterInfo(buddy) {
   const sp = infoOf(buddy);
@@ -168,7 +170,7 @@ const STAGES = [
   { key: "sprout",  label: "새싹",   need: 0,  scale: 0.78, leaves: 1 },
   { key: "growing", label: "자라는 중", need: 3,  scale: 0.9,  leaves: 2 },
   { key: "lush",    label: "무성함", need: 7,  scale: 1.0,  leaves: 3 },
-  { key: "bloom",   label: "만개",   need: 12, scale: 1.08, leaves: 4 },
+  { key: "bloom",   label: "우리집 터줏대감", need: 12, scale: 1.08, leaves: 4 },
 ];
 
 // 제때 준 물주기 횟수(돌봄 점수). 권장 주기의 1.6배 안에 다음 물을 줬으면 '제때'로 인정.
@@ -1004,18 +1006,22 @@ function WaterGrass({ buddy, cycle }) {
   const logSet = new Set(buddy.waterLog);
   const sorted = [...new Set(buddy.waterLog)].sort();
   const DAYS = 14;
+  const totalDays = daysBetween(buddy.since, today) + 1; // 등록일 포함 함께한 일수
+  // 2주 이내면 등록일을 왼쪽 끝에 두고 시작, 넘으면 최근 2주(오늘이 오른쪽 끝)
+  const startKey = totalDays <= DAYS ? buddy.since : keyMinus(today, DAYS - 1);
   const cells = [];
-  for (let i = DAYS - 1; i >= 0; i--) {
-    const k = keyMinus(today, i);
-    const beforeReg = k < buddy.since;
-    let lastWater = null;
-    if (!beforeReg) {
-      for (let j = sorted.length - 1; j >= 0; j--) {
-        if (sorted[j] <= k) { lastWater = sorted[j]; break; }
+  for (let j = 0; j < DAYS; j++) {
+    const k = keyPlus(startKey, j);
+    const future = k > today;
+    let color = "#ECEAE3"; // 앞으로 올 날(빈 칸)
+    if (!future) {
+      let lastWater = null;
+      for (let m = sorted.length - 1; m >= 0; m--) {
+        if (sorted[m] <= k) { lastWater = sorted[m]; break; }
       }
+      color = grassColor(lastWater ? daysBetween(lastWater, k) : null, cycle);
     }
-    const ds = (!beforeReg && lastWater) ? daysBetween(lastWater, k) : null;
-    cells.push({ k, color: beforeReg ? "#ECEAE3" : grassColor(ds, cycle), watered: logSet.has(k), today: i === 0 });
+    cells.push({ k, color, watered: !future && logSet.has(k), today: k === today });
   }
   const lastW = sorted.length ? sorted[sorted.length - 1] : null;
   const dsNow = lastW ? daysBetween(lastW, today) : null;
@@ -1091,7 +1097,7 @@ function BuddySheet({ buddy, onClose, onWater, onRename, onRemove, onFind, onAsk
             <div className="grow big"><span className="grow-bar"><i style={{ width: `${Math.round(g.prog * 100)}%` }} /></span></div>
             <p className="growtip">
               {g.wilting ? "물을 주면 곧 기운을 되찾아요. 지금 흙을 확인해 주세요."
-                : g.next ? `제때 물 주기를 ${g.next.need - g.score}번 더 하면 '${g.next.label}'로 자라요.`
+                : g.next ? `제때 물 주기를 ${g.next.need - g.score}번 더 하면 '${g.next.label}'${ro(g.next.label)} 자라요.`
                 : "최고 단계까지 키워냈어요. 멋진 집사예요!"}
             </p>
           </div>
