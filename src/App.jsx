@@ -35,6 +35,7 @@ const PIC_IMG = {
 // 알림 사전 신청 번호 수집용 웹훅 (n8n → 구글시트 추천).
 // 이 URL을 채우기 전까지는 신청 번호가 고객 폰에만 저장되니, QR 카드 배포 전에 꼭 채워주세요.
 const SUBSCRIBE_WEBHOOK = "https://script.google.com/macros/s/AKfycbxWxQouBrpevkZMxRDPR1kGr_xm95nq73uv6DAd18lxiClLyb9y4xHNbY0YFgIvpIwfdw/exec";
+const VISIT_WEBHOOK = "https://script.google.com/macros/s/AKfycbxVfbiv1UYdBqE83uS9AZ8hbnAwsKSF87v7Wg3-Fwd9-kHOhVcDEpG2U5B-w-HZcwXp/exec"; // 방문 집계용 Apps Script Web App 주소
 const KAKAO_CHAT = "http://pf.kakao.com/_lIxiVj/chat"; // 파워플랜트 1:1 상담 채팅
 const INSTA_URL = "https://instagram.com/powerplant.co"; // 파워플랜트 인스타
 
@@ -540,6 +541,34 @@ export default function PowerplantCare() {
   const [sub, setSub] = useState(null);            // 알림 사전 신청 정보 {phone, marketing, ...}
   const [nudgeOff, setNudgeOff] = useState(false); // 기록 보관 카드 닫음 여부
   const [nudgeSeen, setNudgeSeen] = useState(false); // 보관 팝업 1회 노출 여부
+
+  /* Vercel 웹 애널리틱스 — 방문자 집계용. 주소·기능에 영향 없이 집계 스크립트만 주입.
+     (대시보드에서 Analytics를 켜면 그때부터 방문자/유입경로가 쌓임) */
+  useEffect(() => {
+    if (typeof window === "undefined" || window.__vaInjected) return;
+    window.__vaInjected = true;
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    const s = document.createElement("script");
+    s.defer = true;
+    s.src = "/_vercel/insights/script.js";
+    document.head.appendChild(s);
+  }, []);
+
+  /* 방문 집계 → 구글시트(Apps Script). 세션당 1회, 유입경로(?from=)와 함께 한 줄씩 기록 */
+  useEffect(() => {
+    if (!VISIT_WEBHOOK) return;
+    try {
+      if (sessionStorage.getItem("ppc_visit_logged")) return;
+      sessionStorage.setItem("ppc_visit_logged", "1");
+    } catch (e) { return; }
+    const from = new URLSearchParams(window.location.search).get("from") || "direct";
+    fetch(VISIT_WEBHOOK, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ type: "visit", from, at: new Date().toISOString(), ref: document.referrer || "", ua: navigator.userAgent }),
+    }).catch(() => {});
+  }, []);
 
   /* load / save */
   useEffect(() => { (async () => {
