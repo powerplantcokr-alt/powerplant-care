@@ -531,6 +531,7 @@ export default function PowerplantCare() {
   const [askSeed, setAskSeed] = useState(null);    // AI 상담을 시작할 버디 id (상세→상담 이동용)
   const [chBanner, setChBanner] = useState(null);  // 채널별 환영 배너 (박스동봉/제품상세/SNS)
   const [boxScanned, setBoxScanned] = useState(false); // 박스 QR 스캔 이력 (홈 리뷰이벤트 카드 노출 판정용)
+  const [claim, setClaim] = useState(false);           // 파손·불량 신고 화면 열림 여부
   const [toast, setToast] = useState(null);
   const [notify, setNotify] = useState(null);      // null | "alarm" | "backup"
   const [sub, setSub] = useState(null);            // 알림 사전 신청 정보 {phone, marketing, ...}
@@ -641,7 +642,7 @@ export default function PowerplantCare() {
           <Header onHome={() => setTab("home")} />
           <main className="scroll">
             {tab === "home" && chBanner && <ChannelBanner channel={chBanner} onClose={closeChBanner} onRegister={() => setReg({ step: 1 })} onInsta={openInsta} />}
-            {tab === "home"  && <Home buddies={buddies} onAdd={() => setReg({ step: 1 })} onOpen={setSheet} onWater={waterToday} onFind={goCheck} nudge={showNudge} onBackup={() => setNotify("backup")} onNudgeClose={() => setNudgeOff(true)} boxSource={boxScanned} onInsta={openInsta} />}
+            {tab === "home"  && <Home buddies={buddies} onAdd={() => setReg({ step: 1 })} onOpen={setSheet} onWater={waterToday} onFind={goCheck} nudge={showNudge} onBackup={() => setNotify("backup")} onNudgeClose={() => setNudgeOff(true)} boxSource={boxScanned} onInsta={openInsta} onClaim={() => setClaim(true)} />}
             {tab === "ask"   && <Ask buddies={buddies} onSpecies={applySpecies} ping={ping} seed={askSeed} onSeedUsed={() => setAskSeed(null)} />}
             {tab === "check" && <Check buddies={buddies} onSpecies={applySpecies} ping={ping} />}
             {tab === "water" && <Water buddies={buddies} onToggle={toggleLog} onWater={waterToday} onAlarm={() => setNotify("alarm")} sub={sub} />}
@@ -651,6 +652,7 @@ export default function PowerplantCare() {
       )}
 
       {reg && <Register reg={reg} setReg={setReg} onDone={addBuddy} onClose={() => { setReg(null); if (!buddies.length) setView("welcome"); else setView("app"); }} />}
+      {claim && <Claim onClose={() => setClaim(false)} ping={ping} />}
       {sheet && <BuddySheet buddy={buddies.find((b) => b.id === sheet)} onClose={() => setSheet(null)} onWater={waterToday} onRename={renameBuddy} onRemove={removeBuddy} onFind={goCheck} onAsk={goAsk} />}
       {notify && <NotifyModal mode={notify} buddies={buddies} sub={sub} onClose={() => setNotify(null)}
         onSave={(s) => {
@@ -792,6 +794,59 @@ function Register({ reg, setReg, onDone, onClose }) {
   );
 }
 
+/* ─── 파손·불량 신고 (박스 고객) ─────────────────────────────────── */
+function Claim({ onClose, ping }) {
+  const STORES = ["파워플랜트 자사몰", "오늘의집", "카카오선물하기", "W컨셉", "EQL"];
+  const [store, setStore] = useState("");
+  const [name, setName] = useState("");
+  const ready = !!store && !!name.trim();
+  const summary =
+    "🛠 [파워플랜트 파손·불량 신고]\n" +
+    "─────────────\n" +
+    "구매처: " + (store || "(미선택)") + "\n" +
+    "수취인: " + (name.trim() || "(미입력)") + "\n" +
+    "─────────────\n" +
+    "※ 파손 부위가 보이는 사진을 함께 보내드립니다.\n" +
+    "빠른 처리 부탁드립니다.";
+  return (
+    <div className="layer">
+      <div className="layer-hd">
+        <button className="iconbtn" onClick={onClose} aria-label="뒤로">{I.back()}</button>
+        <span className="layer-title">파손·불량 신고</span>
+      </div>
+      <div className="scroll layer-body">
+        <div className="apology">
+          <b>불편을 드려 죄송합니다</b>
+          <p>소중한 버디가 안전하지 않게 도착해 정말 죄송합니다. 아래 간단한 정보만 남겨주시면, 빠르게 확인하여 처리해 드리겠습니다.</p>
+        </div>
+
+        <label className="lbl">구매처</label>
+        <div className="chips wrap">
+          {STORES.map((s) => (
+            <button key={s} className={"chip" + (store === s ? " on" : "")} onClick={() => setStore(s)}>{s}</button>
+          ))}
+        </div>
+
+        <label className="lbl">수취인명</label>
+        <input className="search" placeholder="받으신 분의 성함을 입력해 주세요" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} />
+
+        <div className="photo-guide">
+          <span className="pg-ic">📷</span>
+          <span className="pg-tx">
+            <b>파손된 부분 사진을 준비해 주세요</b>
+            <p>아래 1:1 카카오톡 상담을 열고 파손 부위가 잘 보이는 사진을 올려주시면, 담당자가 바로 확인하여 안내해 드리겠습니다.</p>
+          </span>
+        </div>
+
+        {ready
+          ? <a className="btn-ink claim-cta" href={KAKAO_CHAT} target="_blank" rel="noopener noreferrer" onClick={() => copyKakaoSummary(summary, ping)}>카카오톡 1:1 상담 열고 사진 보내기</a>
+          : <button className="btn-ink claim-cta disabled" disabled>구매처와 수취인명을 입력해 주세요</button>}
+        <p className="micro center">입력하신 정보는 자동으로 복사됩니다.<br />상담창에서 길게 눌러 붙여넣어 주세요.</p>
+      </div>
+    </div>
+  );
+}
+
 /* ─── 채널별 환영 배너 ──────────────────────────────────────────── */
 function ChannelBanner({ channel, onClose, onRegister, onInsta }) {
   const reg = () => { onClose(); onRegister(); };
@@ -840,7 +895,7 @@ function ChannelBanner({ channel, onClose, onRegister, onInsta }) {
 }
 
 /* ─── home ──────────────────────────────────────────────────────── */
-function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudgeClose, boxSource, onInsta }) {
+function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudgeClose, boxSource, onInsta, onClaim }) {
   return (
     <div className="page">
       <img className="home-banner" src={HERO} alt="POWERPLANT — ready to grow" />
@@ -901,6 +956,12 @@ function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudg
         </div>
       )}
       <button className="addcard" onClick={onAdd}>{I.plus()} 버디 등록하기</button>
+      {boxSource && (
+        <button className="claim-entry" onClick={onClaim}>
+          <span>받으신 제품에 문제가 있으신가요? <b>파손·불량 신고</b></span>
+          <span className="claim-arrow">→</span>
+        </button>
+      )}
       <div className="page-foot">Plant Creative Crew · 37.7207971, 126.8492043</div>
     </div>
   );
@@ -1511,6 +1572,19 @@ input{font:inherit;color:var(--ink)}
 .chips{display:flex;gap:8px;margin:14px 0 4px;overflow-x:auto;padding-bottom:4px}
 .chips.wrap{flex-wrap:wrap;overflow:visible}
 .chip{flex-shrink:0;border:1.5px solid var(--ink);border-radius:999px;padding:8px 14px;font-size:13px;background:var(--paper)}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.apology{background:#f6f5f1;border-radius:14px;padding:16px}
+.apology b{font-size:16.5px;font-weight:800;display:block;margin-bottom:7px}
+.apology p{font-size:13px;line-height:1.7;color:#444}
+.photo-guide{border:1.2px dashed #cfccc4;border-radius:14px;padding:15px;margin-top:22px;display:flex;gap:11px;align-items:flex-start}
+.pg-ic{font-size:20px;line-height:1.2}
+.pg-tx b{font-size:13.5px;font-weight:700}
+.pg-tx p{font-size:12.5px;line-height:1.65;color:#555;margin-top:4px}
+.claim-cta{margin-top:16px;text-decoration:none}
+.claim-cta.disabled{background:#cfccc4;cursor:default}
+.claim-entry{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--paper);margin-top:10px;font-size:13px;color:var(--muted)}
+.claim-entry b{color:var(--ink);font-weight:700}
+.claim-arrow{color:var(--muted);font-size:15px}
 .chip.dice{border-style:dashed;font-weight:700}
 .chip.buddychip{display:inline-flex;align-items:center;gap:6px;font-weight:700}
 .chip.dice:disabled{opacity:.5}
