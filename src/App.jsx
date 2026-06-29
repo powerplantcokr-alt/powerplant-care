@@ -145,6 +145,7 @@ const toKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDat
 const todayKey = () => toKey(new Date());
 const fromKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
 const daysBetween = (a, b) => Math.round((fromKey(b) - fromKey(a)) / 86400000);
+const keyMinus = (k, n) => { const d = fromKey(k); d.setDate(d.getDate() - n); return toKey(d); };
 const fmtShort = (k) => { const d = fromKey(k); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
 const wa = (s) => { const c = s.charCodeAt(s.length - 1); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0 ? "과" : "와"; };
 
@@ -986,6 +987,66 @@ function Home({ buddies, onAdd, onOpen, onWater, onFind, nudge, onBackup, onNudg
 }
 
 /* ─── buddy sheet ───────────────────────────────────────────────── */
+// 물 준 뒤 경과일 + 종 주기 → 잔디 칸 색 (건강=초록 → 마른 흙빛 → 테라코타=위험)
+function grassColor(daysSince, cycle) {
+  if (daysSince == null || !cycle) return "#ECEAE3"; // 기록 전
+  if (daysSince === 0) return "#0aa85a";             // 오늘 물 줌
+  const r = daysSince / cycle;
+  if (r <= 0.5) return "#57bd86";   // 건강
+  if (r <= 0.7) return "#93cfa9";   // 양호
+  if (r <= 0.85) return "#cdbb92";  // 마르는 중
+  if (r <= 1.0) return "#cc8f6a";   // 슬슬 목마름
+  return "#bc6a4e";                 // 목마름(위험)
+}
+
+function WaterGrass({ buddy, cycle }) {
+  const today = todayKey();
+  const logSet = new Set(buddy.waterLog);
+  const sorted = [...new Set(buddy.waterLog)].sort();
+  const DAYS = 14;
+  const cells = [];
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const k = keyMinus(today, i);
+    const beforeReg = k < buddy.since;
+    let lastWater = null;
+    if (!beforeReg) {
+      for (let j = sorted.length - 1; j >= 0; j--) {
+        if (sorted[j] <= k) { lastWater = sorted[j]; break; }
+      }
+    }
+    const ds = (!beforeReg && lastWater) ? daysBetween(lastWater, k) : null;
+    cells.push({ k, color: beforeReg ? "#ECEAE3" : grassColor(ds, cycle), watered: logSet.has(k), today: i === 0 });
+  }
+  const lastW = sorted.length ? sorted[sorted.length - 1] : null;
+  const dsNow = lastW ? daysBetween(lastW, today) : null;
+  const r = (dsNow != null && cycle) ? dsNow / cycle : 0;
+  const statusText =
+    dsNow == null ? "첫 물주기를 기다려요"
+    : r > 1.0 ? "물 줄 시간이 지났어요"
+    : r >= 1.0 ? "지금 물 줄 시간이에요"
+    : r > 0.85 ? "곧 물 줄 시간이에요"
+    : "촉촉해요";
+  return (
+    <div className="grasscard">
+      <div className="grass-hd">
+        <span className="idtag">WATER GRASS</span>
+        <span className="grass-stat"><span className="grass-dot" style={{ background: grassColor(dsNow, cycle) }} /><b>{statusText}</b></span>
+      </div>
+      <div className="grass-row">
+        {cells.map((c, i) => (
+          <span key={i} className={"gcell" + (c.today ? " today" : "")} style={{ background: c.color }}>{c.watered && <i className="gdrop" />}</span>
+        ))}
+      </div>
+      <div className="grass-legend">
+        <span className="glg"><i style={{ background: "#0aa85a" }} />물 준 날</span>
+        <span className="glg"><i style={{ background: "#57bd86" }} />건강</span>
+        <span className="glg"><i style={{ background: "#cdbb92" }} />마르는 중</span>
+        <span className="glg"><i style={{ background: "#bc6a4e" }} />목마름</span>
+      </div>
+    </div>
+  );
+}
+
 function BuddySheet({ buddy, onClose, onWater, onRename, onRemove, onFind, onAsk }) {
   const [editing, setEditing] = useState(false);
   const [nm, setNm] = useState(buddy ? buddy.name : "");
@@ -1035,6 +1096,8 @@ function BuddySheet({ buddy, onClose, onWater, onRename, onRemove, onFind, onAsk
             </p>
           </div>
         )}
+
+        {!w.noCycle && <WaterGrass buddy={buddy} cycle={sp.water} />}
 
         <div className="rows">
           <Row k="WATER" t="물주기" v={w.noCycle ? `아직 몰라요 · ${w.last ? `마지막 ${w.sinceLast}일 전` : "기록 없음"}` : `${sp.water}일에 한 번 · ${w.last ? `마지막 ${w.sinceLast}일 전` : "기록 없음"}`} />
@@ -1605,6 +1668,17 @@ input{font:inherit;color:var(--ink)}
 .claim-entry b{color:var(--ink);font-weight:700}
 .claim-arrow{color:var(--muted);font-size:15px}
 .lbl-opt{color:#b8b8b8;font-weight:400;letter-spacing:normal;margin-left:2px}
+.grasscard{background:#fff;border:1.5px solid var(--ink);border-radius:16px;padding:15px 15px 16px;margin:0 0 14px}
+.grass-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.grass-stat{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700}
+.grass-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.grass-row{display:flex;gap:4px}
+.gcell{flex:1;aspect-ratio:1;border-radius:4px;position:relative;min-width:0}
+.gcell.today{box-shadow:0 0 0 2px var(--ink)}
+.gdrop{position:absolute;top:50%;left:50%;width:4.5px;height:4.5px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);opacity:.9}
+.grass-legend{display:flex;flex-wrap:wrap;gap:11px;margin-top:13px;padding-top:12px;border-top:1px solid #efeee9}
+.glg{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#5a5852}
+.glg i{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}
 .chip.dice{border-style:dashed;font-weight:700}
 .chip.buddychip{display:inline-flex;align-items:center;gap:6px;font-weight:700}
 .chip.dice:disabled{opacity:.5}
