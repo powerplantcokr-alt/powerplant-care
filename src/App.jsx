@@ -35,7 +35,7 @@ const PIC_IMG = {
 // 알림 사전 신청 번호 수집용 웹훅 (n8n → 구글시트 추천).
 // 이 URL을 채우기 전까지는 신청 번호가 고객 폰에만 저장되니, QR 카드 배포 전에 꼭 채워주세요.
 const SUBSCRIBE_WEBHOOK = "https://script.google.com/macros/s/AKfycbxWxQouBrpevkZMxRDPR1kGr_xm95nq73uv6DAd18lxiClLyb9y4xHNbY0YFgIvpIwfdw/exec";
-const VISIT_WEBHOOK = "https://script.google.com/macros/s/AKfycbxVfbiv1UYdBqE83uS9AZ8hbnAwsKSF87v7Wg3-Fwd9-kHOhVcDEpG2U5B-w-HZcwXp/exec"; // 방문 집계용 Apps Script Web App 주소
+const VISIT_WEBHOOK = SUBSCRIBE_WEBHOOK; // 방문도 같은 통합 수집기(전화번호 파일)로 전송 → 한 파일의 "방문기록" 탭에 모임
 const KAKAO_CHAT = "http://pf.kakao.com/_lIxiVj/chat"; // 파워플랜트 1:1 상담 채팅
 const INSTA_URL = "https://instagram.com/powerplant.co"; // 파워플랜트 인스타
 
